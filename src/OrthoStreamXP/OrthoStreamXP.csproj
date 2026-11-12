@@ -11,6 +11,8 @@
     <ApplicationIcon>orthostreamxp.ico</ApplicationIcon>
     <!-- The program is the window; app.manifest keeps Explorer from opening a console. -->
     <UseWPF>true</UseWPF>
+    <!-- Only for the notification-area icon (NotifyIcon), which WPF lacks; same Windows Desktop runtime as WPF. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- WPF's Windows 11 (Fluent) theme is marked experimental. -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
@@ -43,6 +45,9 @@
     <!-- WPF projects leave these out of the implicit usings; the engine uses them everywhere. -->
     <Using Include="System.IO" />
     <Using Include="System.Net.Http" />
+    <!-- Windows Forms is used by name only (Gui\TrayIcon.cs): its types would clash with WPF's (Application, MessageBox, Point...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>

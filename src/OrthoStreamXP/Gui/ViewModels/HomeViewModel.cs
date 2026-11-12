@@ -85,6 +85,12 @@ internal sealed class HomeViewModel : ObservableObject, IPage
     /// <summary>Stopped: start OrthoStreamXP, then X-Plane. Running: start X-Plane.</summary>
     public ICommand Fly { get; }
 
+    /// <summary>The Fly button started X-Plane: the window gets out of its way.</summary>
+    public event EventHandler? XPlaneStarted;
+
+    /// <summary>X-Plane was running and has quit (checked every few seconds while OrthoStreamXP runs).</summary>
+    public event EventHandler? XPlaneQuit;
+
     /// <summary>X-Plane is installed where the settings say, and not running: one button starts it (and OrthoStreamXP first).</summary>
     public bool ShowFly => Mount.State is MountState.Stopped or MountState.Running && _xplaneProgram is not null && !_xplaneRunning;
 
@@ -279,12 +285,14 @@ internal sealed class HomeViewModel : ObservableObject, IPage
 
     private string? _xplaneProgram;
     private bool _xplaneRunning;
+    private readonly XPlaneWatch _xplaneWatch = new();
 
     /// <summary>Notes where X-Plane is installed and whether it runs (on start-up and every few seconds).</summary>
     private void CheckXPlane()
     {
         _xplaneProgram = SystemCheck.XPlaneProgram(SettingsDocument.Load(SettingsDocument.DefaultPath).Get("xplane"));
         _xplaneRunning = SystemCheck.IsXPlaneRunning();
+        if (_xplaneWatch.QuitSince(_xplaneRunning)) XPlaneQuit?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>OrthoStreamXP first (X-Plane looks for scenery only when it starts), then X-Plane.</summary>
@@ -318,6 +326,7 @@ internal sealed class HomeViewModel : ObservableObject, IPage
             _xplaneProblem = new Notice(Severity.Error, "X-Plane could not be started", $"{ex.Message} Start it yourself; the photo scenery is ready for it.");
         }
         Update();
+        if (_xplaneProblem is null) XPlaneStarted?.Invoke(this, EventArgs.Empty);
     }
 
     private Notice? _xplaneProblem;
