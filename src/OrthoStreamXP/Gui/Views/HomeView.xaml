@@ -86,13 +86,14 @@
                         <TextBlock Style="{StaticResource Icon}" Text="{Binding StatusGlyph}" FontSize="26"
                                    Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
                     </Border>
-                    <StackPanel Grid.Column="1" Margin="20,2,20,0" VerticalAlignment="Center">
+                    <!-- Top, beside the icon: the right column grows with the SimBrief rows, and centred text would drift away from the icon -->
+                    <StackPanel Grid.Column="1" Margin="20,4,20,0" VerticalAlignment="Top">
                         <TextBlock Text="{Binding StatusTitle}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                         <TextBlock Text="{Binding StatusText}" Style="{StaticResource Secondary}" Margin="0,4,0,0" />
                         <ProgressBar IsIndeterminate="True" Margin="0,12,0,0" MaxWidth="320" HorizontalAlignment="Left" Width="320"
                                      Visibility="{Binding IsBusy, Converter={StaticResource Visible}}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="2" VerticalAlignment="Top">
                         <Button Command="{Binding StartStop}" Style="{DynamicResource AccentButtonStyle}" MinWidth="148" MinHeight="40"
                                 Padding="20,6" FontSize="15" HorizontalAlignment="Right" AutomationProperties.Name="{Binding StartStopText}">
                             <StackPanel Orientation="Horizontal">
@@ -109,6 +110,23 @@
                             </StackPanel>
                         </Button>
                         <CheckBox Content="Start when OrthoStreamXP opens" Style="{StaticResource Switch}" IsChecked="{Binding AutoStart}" Margin="0,12,0,0" HorizontalAlignment="Right" />
+                        <CheckBox Content="Build my SimBrief flight's scenery ahead" Style="{StaticResource Switch}" IsChecked="{Binding DeparturePrefetch}"
+                                  IsEnabled="{Binding CanChangeDeparturePrefetch}" Margin="0,8,0,0" HorizontalAlignment="Right"
+                                  Visibility="{Binding ShowDeparturePrefetch, Converter={StaticResource Visible}}"
+                                  ToolTip="For this session: when streaming starts, the photos around your latest SimBrief flight plan's departure are built before X-Plane loads them; while the aircraft stands at the gate, the arrival and the climb follow. Generated your flight plan after starting? Press Reload SimBrief flight plan. The switch can be changed while streaming is stopped and is on again the next time OrthoStreamXP opens; with Start when OrthoStreamXP opens on, streaming starts before you can turn it off."
+                                  AutomationProperties.Name="Build my SimBrief flight's scenery ahead, this session" />
+                        <Button Command="{Binding ReloadFlightPlan}" MinHeight="30" Padding="12,3" Margin="0,8,0,0" HorizontalAlignment="Right"
+                                Visibility="{Binding ShowReloadFlightPlan, Converter={StaticResource Visible}}"
+                                ToolTip="Generated your SimBrief flight plan after starting streaming, or planned another flight? Asks SimBrief for your latest flight plan now and builds its scenery. SimBrief is only asked when you press this."
+                                AutomationProperties.Name="Reload SimBrief flight plan">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" Margin="0,0,8,0" />
+                                <TextBlock Text="Reload SimBrief flight plan" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="{Binding FlightPlanStatus}" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Right" HorizontalAlignment="Right"
+                                   Margin="0,4,0,0" Opacity="0.8" Visibility="{Binding ShowFlightPlanStatus, Converter={StaticResource Visible}}"
+                                   AutomationProperties.LiveSetting="Polite" />
                     </StackPanel>
                 </Grid>
             </Border>

@@ -26,6 +26,9 @@ internal sealed class HomeViewModel : ObservableObject, IPage
     private System.Windows.Media.ImageSource? _reportBackdrop;
     private string? _reviewPath;
     private Notice? _tuningNotice;
+    private bool _reloading;
+    /// <summary>The running session's flight plan, as fetched at the start or by the last reload; null until known.</summary>
+    private string? _planStatus;
     private readonly AppUpdates _updates = new();
     /// <summary>Looks for a new version 10 seconds after the window opens, then every 6 hours.</summary>
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) };
@@ -38,6 +41,7 @@ internal sealed class HomeViewModel : ObservableObject, IPage
         ChangeQuality = new RelayCommand(() => _main.Show(_main.Settings));
         OpenLog = new RelayCommand(() => _main.Show(_main.LogPage));
         RestartMount = new RelayCommand(() => _ = Mount.RestartAsync(), () => Mount.IsRunning);
+        ReloadFlightPlan = new RelayCommand(() => _ = ReloadFlightPlanAsync(), () => Mount.UsesSimBrief && !_reloading);
         ApplyReview = new RelayCommand(Apply);
         DismissReview = new RelayCommand(() =>
         {
@@ -60,11 +64,13 @@ internal sealed class HomeViewModel : ObservableObject, IPage
             {
                 LoadReview();
                 LoadReport();
+                PlanStatus = null; // the next session starts with its own plan
             }
             if (Mount.State == MountState.Starting) _tuningNotice = null;
             if (Mount.State == MountState.Running)
             {
                 _hasRun = true;
+                _ = ShowFirstFlightPlanAsync();
                 _previous = null;
                 _mbits = _tilesPerSecond = 0;
                 _failureWindow.Clear();
@@ -148,6 +154,87 @@ internal sealed class HomeViewModel : ObservableObject, IPage
             Raise();
         }
     }
+
+    /// <summary>The SimBrief departure prefetch for the next start (this window only, not saved).</summary>
+    public bool DeparturePrefetch
+    {
+        get => Mount.DeparturePrefetch;
+        set
+        {
+            Mount.DeparturePrefetch = value;
+            Raise();
+            Raise(nameof(ShowFlightPlanStatus));
+        }
+    }
+
+    /// <summary>
+    /// "Reload SimBrief flight plan": asks SimBrief again whenever the pilot wants (generated the OFP after starting, or
+    /// planned another flight). Never automatic; disabled while a reload runs, so a double click sends one request.
+    /// </summary>
+    public ICommand ReloadFlightPlan { get; }
+
+    /// <summary>Streaming runs with a SimBrief flight plan to reload.</summary>
+    public bool ShowReloadFlightPlan => Mount.UsesSimBrief;
+
+    /// <summary>
+    /// Home's SimBrief line, shown whenever the SimBrief switch is on: before the start that the plan is read then,
+    /// while starting that SimBrief is asked, then the flight found ("Flight plan: EDDV → ENGM, generated 12 min ago.")
+    /// or what the last reload found.
+    /// </summary>
+    public string FlightPlanStatus => Mount.State switch
+    {
+        MountState.Stopped => "Your latest SimBrief flight plan is read when streaming starts.",
+        MountState.Running when !Mount.UsesSimBrief => "SimBrief is off for this run; the log says why.",
+        MountState.Running or MountState.Starting => _planStatus ?? "Asking SimBrief for your latest flight plan…",
+        _ => _planStatus ?? "",
+    };
+
+    public bool ShowFlightPlanStatus => ShowDeparturePrefetch && DeparturePrefetch && FlightPlanStatus.Length > 0;
+
+    private string? PlanStatus
+    {
+        set
+        {
+            _planStatus = value;
+            Raise(nameof(FlightPlanStatus));
+            Raise(nameof(ShowFlightPlanStatus));
+        }
+    }
+
+    /// <summary>Streaming started: shows the plan it fetched, unless a reload already said more.</summary>
+    private async Task ShowFirstFlightPlanAsync()
+    {
+        if (Mount.FirstFlightPlanAsync() is not { } first)
+        {
+            PlanStatus = null;
+            return;
+        }
+        string text = await first.ConfigureAwait(true);
+        if (Mount.State == MountState.Running && !_reloading && _planStatus is null) PlanStatus = text;
+    }
+
+    private async Task ReloadFlightPlanAsync()
+    {
+        if (Mount.ReloadFlightPlanAsync() is not { } reload) return;
+        _reloading = true;
+        RelayCommand.Refresh();
+        PlanStatus = "Asking SimBrief for your latest flight plan…";
+        try
+        {
+            PlanStatus = await reload.ConfigureAwait(true);
+        }
+        finally
+        {
+            _reloading = false;
+            RelayCommand.Refresh();
+        }
+    }
+
+    /// <summary>A SimBrief user is set, so there is a departure prefetch to turn off.</summary>
+    public bool ShowDeparturePrefetch { get; private set; }
+
+    /// <summary>The switch applies when streaming starts: it can be changed only while stopped.</summary>
+    public bool CanChangeDeparturePrefetch => Mount.State == MountState.Stopped;
 
     public string StartStopText => Mount.State switch
     {
@@ -379,6 +466,9 @@ internal sealed class HomeViewModel : ObservableObject, IPage
                 .Select(name => new PackageRow(name, xplane is null ? "" : Path.Join(xplane, "Custom Scenery", name)))];
         }
         Raise(nameof(PackagesCaption));
+        ShowDeparturePrefetch = !string.IsNullOrWhiteSpace(settings.Get("simbrief-user"));
+        Raise(nameof(ShowDeparturePrefetch));
+        Raise(nameof(ShowFlightPlanStatus));
     }
 
     // ---------------------------------------------------------------- the last flight's report
@@ -518,7 +608,8 @@ internal sealed class HomeViewModel : ObservableObject, IPage
         Notices = BuildNotices();
         foreach (string name in new[]
                  {
-                     nameof(ShowFly), nameof(FlyText), nameof(FlyToolTip),
+                     nameof(ShowFly), nameof(FlyText), nameof(FlyToolTip), nameof(CanChangeDeparturePrefetch), nameof(ShowReloadFlightPlan),
+                     nameof(FlightPlanStatus), nameof(ShowFlightPlanStatus),
                      nameof(StartStopText), nameof(StartStopGlyph), nameof(IsBusy), nameof(StatusKind), nameof(StatusGlyph), nameof(StatusTitle),
                      nameof(StatusText), nameof(ShowGettingStarted), nameof(ShowStats), nameof(StatsTitle), nameof(TexturesValue), nameof(ReadyAheadValue),
                      nameof(ReadyAheadCaption), nameof(BuildingValue), nameof(SpeedValue), nameof(SpeedCaption), nameof(XPlaneTitle),

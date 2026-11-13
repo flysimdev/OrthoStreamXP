@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Reflection;
 using System.Windows.Input;
 using OrthoStreamXP.Setup;
 
@@ -238,8 +237,7 @@ internal sealed class PackagesViewModel : ObservableObject, IPage
         {
             Timeout = Timeout.InfiniteTimeSpan, // each download watches for silence itself
         };
-        string version = typeof(PackagesViewModel).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "0";
-        http.DefaultRequestHeaders.UserAgent.ParseAdd($"orthostreamxp/{version}");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd(HttpIdentity.UserAgent);
         return http;
     }
 }

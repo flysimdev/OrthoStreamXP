@@ -2,7 +2,7 @@
 
 [User guide](README.md) › First setup
 
-The setup opens the first time you start OrthoStreamXP. It has six steps and takes a minute or two. Use **Next** and **Back** to move between the steps; nothing is saved until you click **Finish**.
+The setup opens the first time you start OrthoStreamXP. It has seven steps and takes a minute or two. Use **Next** and **Back** to move between the steps; nothing is saved until you click **Finish**.
 
 You can run it again later from **Settings › Run the setup again**. A second run starts from your current settings, and **Cancel** leaves them unchanged.
 
@@ -87,9 +87,13 @@ Pick how sharp the ground should be: **Balanced**, **Sharp**, **Ultra** or **Ext
 
 Internet speed changes during the day, so you can repeat the test later in [Settings › Pictures and download](settings.md#pictures-and-download).
 
-## 6. Ready
+## 6. SimBrief
 
-![Setup step 6: Ready](images/setup-ready.png)
+Optional. If you plan your flights with SimBrief, enter your SimBrief username or Pilot ID: OrthoStreamXP then builds your flight's scenery before X-Plane needs it, the departure when streaming starts and the arrival and climb while you sit at the gate. Click **Test SimBrief connection** to check that your latest flight plan is found. Once a username is entered, you can also choose the **download limit per session** and whether to **also build the alternate airport** (see [Why there is a download limit](simbrief.md#why-there-is-a-download-limit)). Leave the field empty to skip this. See [SimBrief](simbrief.md).
+
+## 7. Ready
+
+![Setup step 7: Ready](images/setup-ready.png)
 
 This step summarises your choices: the X-Plane folder, the scenery packages, the quality and the cache folder. Tick **Start OrthoStreamXP now** if you want to fly straight away, then click **Finish**.
 

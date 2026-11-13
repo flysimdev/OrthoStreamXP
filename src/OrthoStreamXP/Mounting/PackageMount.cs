@@ -21,6 +21,7 @@ internal sealed class PackageMount : IDisposable
         SeasonClock? seasons, AreaUsage? usage, ColourMatcher? colours, SceneryLoads loads, ushort[]? exposure, NightTextures? night)
     {
         Plan = plan;
+        Roots = roots;
         Streamer = streamer;
         Scheduler = builder is null || streamer is not null ? null : new TextureScheduler(roots, builder, textureOptions);
         Catalog = builder is not null && (trackAircraft || loadAhead) ? new TextureCatalog() : null;
@@ -39,6 +40,7 @@ internal sealed class PackageMount : IDisposable
     }
 
     public PackagePlan Plan { get; }
+    public SceneryRoots Roots { get; }
     public TextureScheduler? Scheduler { get; }
     public TextureStreamer? Streamer { get; }
     public TextureCatalog? Catalog { get; }

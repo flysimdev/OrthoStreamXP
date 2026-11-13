@@ -11,8 +11,11 @@ internal sealed record PositionOptions(int Port, IPEndPoint XPlane, double Radiu
 /// <summary>A mounted package's loaded textures, and how to queue the ones ahead of the aircraft.</summary>
 internal sealed record PrefetchTarget(TextureCatalog Catalog, Func<IReadOnlyList<VirtualPath>, int> Prefetch);
 
-/// <summary>The latest aircraft position X-Plane sent; <paramref name="GroundSpeedKt"/> is null until it is known.</summary>
-internal sealed record AircraftReport(double Lat, double Lon, double? GroundSpeedKt, DateTime ReceivedUtc);
+/// <summary>
+/// The latest aircraft position X-Plane sent. <paramref name="GroundSpeedKt"/>: X-Plane's own, else worked out from the
+/// positions; null until it is known. <paramref name="OnGround"/>: X-Plane's on-ground flag; null when it does not send it.
+/// </summary>
+internal sealed record AircraftReport(double Lat, double Lon, double? GroundSpeedKt, DateTime ReceivedUtc, bool? OnGround = null);
 
 /// <summary>
 /// Follows the aircraft and prefetches the textures of the loaded scenery along its predicted path.
@@ -96,7 +99,7 @@ internal sealed class AircraftPositionListener(IReadOnlyList<PrefetchTarget> tar
             foreach (var (dataref, index) in XPlaneUdp.CameraDatarefs)
             {
                 // The screen and field of view change rarely: once a second is plenty.
-                int rate = timesPerSecond == 0 ? 0 : index >= XPlaneUdp.FieldOfViewIndex ? 1 : timesPerSecond;
+                int rate = timesPerSecond == 0 ? 0 : XPlaneUdp.Rare(index) ? 1 : timesPerSecond;
                 _socket.SendTo(XPlaneUdp.SubscribeRequest(dataref, index, rate), options.XPlane);
             }
         }
@@ -157,8 +160,10 @@ internal sealed class AircraftPositionListener(IReadOnlyList<PrefetchTarget> tar
         onPosition?.Invoke(lat, lon);
         TimeSpan now = _clock.Elapsed;
         bool jumped = _motion.Add(now, lat, lon);
-        _latest = new AircraftReport(lat, lon, _motion.Current?.SpeedMps * 1.943844, DateTime.UtcNow);
-        onCamera?.Invoke(Camera(lat, lon, jumped));
+        double? xplaneKt = GroundSpeedKt();
+        bool? onGround = OnGround();
+        _latest = new AircraftReport(lat, lon, xplaneKt ?? _motion.Current?.SpeedMps * GroundWatch.KnotsPerMps, DateTime.UtcNow, onGround);
+        onCamera?.Invoke(Camera(lat, lon, jumped, xplaneKt, onGround));
         if (onDate is not null && Value(XPlaneUdp.DateIndex) is { } day) onDate((int)Math.Round(day));
         if (Value(XPlaneUdp.SunPitchIndex) is { } sun) _daylight.Offer(sun);
         if (onScreen is not null && Value(XPlaneUdp.WindowWidthIndex) is { } width && Value(XPlaneUdp.FieldOfViewIndex) is { } fov && _screen != (width, fov))
@@ -191,11 +196,18 @@ internal sealed class AircraftPositionListener(IReadOnlyList<PrefetchTarget> tar
 
     private float? Value(int index) => _camera[index - XPlaneUdp.ElevationIndex];
 
+    /// <summary>X-Plane's ground speed in knots; null until it sends one.</summary>
+    private double? GroundSpeedKt() => Value(XPlaneUdp.GroundSpeedIndex) is { } mps && mps >= 0 ? mps * GroundWatch.KnotsPerMps : null;
+
+    /// <summary>X-Plane's on-ground flag; null until it sends one.</summary>
+    private bool? OnGround() => Value(XPlaneUdp.OnGroundIndex) is { } flag ? flag >= 0.5f : null;
+
     /// <summary>
     /// The camera: the aircraft position moved by the view's offset from the aircraft (x east, z south), its height
     /// the aircraft's above the ground plus the view's above the aircraft. Without those values, the aircraft itself.
+    /// The aircraft's ground speed and on-ground flag go with it, as X-Plane sent them (null when it did not).
     /// </summary>
-    private CameraReport Camera(double lat, double lon, bool jumped)
+    private CameraReport Camera(double lat, double lon, bool jumped, double? groundSpeedKt, bool? onGround)
     {
         double east = 0, north = 0, up = 0;
         int local = XPlaneUdp.LocalXIndex, view = XPlaneUdp.ViewXIndex;
@@ -204,7 +216,8 @@ internal sealed class AircraftPositionListener(IReadOnlyList<PrefetchTarget> tar
             (east, up, north) = (vx - ax, vy - ay, -(vz - az));
         double camLat = lat + north / 111_320.0, camLon = lon + east / (111_320.0 * Math.Max(0.01, Math.Cos(lat * Math.PI / 180)));
         double height = Math.Max(0, (Value(XPlaneUdp.HeightAglIndex) ?? 0) + up);
-        return new CameraReport(camLat, camLon, height, Value(XPlaneUdp.ElevationIndex), _motion.Current, jumped, DateTime.UtcNow);
+        return new CameraReport(camLat, camLon, height, Value(XPlaneUdp.ElevationIndex), _motion.Current, jumped, DateTime.UtcNow,
+            GroundSpeedKt: groundSpeedKt, OnGround: onGround);
     }
 
     /// <summary>A position from an answer to our subscription, or from Data Output row 20.</summary>

@@ -6,7 +6,7 @@ namespace OrthoStreamXP.Scenery;
 /// flight or a teleport. <paramref name="Inferred"/>: placed from X-Plane's reads, not sent by X-Plane.
 /// </summary>
 internal sealed record CameraReport(double Lat, double Lon, double HeightAglM, double? ElevationM, Motion? Motion, bool Jumped, DateTime ReceivedUtc,
-    bool Inferred = false);
+    bool Inferred = false, double? GroundSpeedKt = null, bool? OnGround = null);
 
 /// <summary>
 /// The latest camera position for the distance bands and the read log, and whether X-Plane is still starting a

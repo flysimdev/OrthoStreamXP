@@ -8,6 +8,8 @@ namespace OrthoStreamXP.Textures;
 internal sealed class TileStats
 {
     public int Hits, Misses, Calls, Fallbacks;
+    /// <summary>Bytes downloaded for the build (every answer, as the session's own count).</summary>
+    public long Bytes;
     private long _downloadTicks;
 
     public double DownloadSeconds => TimeSpan.FromTicks(Interlocked.Read(ref _downloadTicks)).TotalSeconds;
@@ -150,7 +152,7 @@ internal sealed class TileSource : IDisposable
             AutomaticDecompression = DecompressionMethods.None,
         })
         { Timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 1, 120)) };
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("orthostreamxp/0.2");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd(HttpIdentity.UserAgent);
     }
 
     /// <summary>The provider names in the order they are tried, e.g. "esri,bing".</summary>
@@ -343,6 +345,7 @@ internal sealed class TileSource : IDisposable
                         byte[] bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                         Interlocked.Increment(ref _tilesDownloaded);
                         Interlocked.Add(ref _bytesDownloaded, bytes.Length);
+                        Interlocked.Add(ref stats.Bytes, bytes.Length);
                         Interlocked.Add(ref _tileTicks, Stopwatch.GetElapsedTime(started).Ticks);
                         byte[] decoded = Images.DecodeTile(bytes); // rejects error pages and truncated data
                         stats.AddDownload(Stopwatch.GetElapsedTime(started));

@@ -79,6 +79,38 @@ public sealed class CacheAreasTests : IDisposable
     }
 
     [Fact]
+    public void An_area_only_prefetched_goes_before_an_area_flown_even_when_its_files_are_newer()
+    {
+        // R5: an area was prefetched (files written just now) but never flown; Wrocław was flown earlier.
+        File($"level0_4096-4096/P/textures/{Wroclaw}.dds", 600);
+        AreaUsage usage = AreaUsage.Load(Cache);
+        usage.Note(new AreaName(51, 17));
+        Thread.Sleep(20);
+        File($"level0_4096-4096/P/textures/{Prague}.dds", 600); // the pre-warm writes it after the flight's last use
+
+        var (removed, _) = CacheAreas.Trim(Cache, 1000, usage, TestContext.Current.CancellationToken);
+
+        Assert.Equal([new AreaName(50, 13)], removed);
+    }
+
+    [Fact]
+    public void An_area_prefetched_and_flown_later_is_trimmed_by_its_age_like_any_other()
+    {
+        // R5: a pre-warmed area counts as never flown only until X-Plane opens it; then the oldest use goes first again.
+        File($"level0_4096-4096/P/textures/{Prague}.dds", 600); // pre-warmed first...
+        AreaUsage usage = AreaUsage.Load(Cache);
+        usage.Note(new AreaName(51, 17)); // ...Wrocław flown...
+        Thread.Sleep(20);
+        File($"level0_4096-4096/P/textures/{Wroclaw}.dds", 600);
+        Thread.Sleep(20);
+        usage.Note(new AreaName(50, 13)); // ...and then Prague flown too, last
+
+        var (removed, _) = CacheAreas.Trim(Cache, 1000, usage, TestContext.Current.CancellationToken);
+
+        Assert.Equal([new AreaName(51, 17)], removed); // the area flown longest ago, not the one first only prefetched
+    }
+
+    [Fact]
     public void An_area_is_pictured_from_its_textures_smallest_levels()
     {
         byte[] rgb = new byte[64 * 64 * 3];

@@ -87,6 +87,12 @@ internal sealed class MountController : ObservableObject
         await StartAsync().ConfigureAwait(true);
     }
 
+    /// <summary>
+    /// Builds the SimBrief flight plan's departure ahead at the next start (when a SimBrief user is set). For this
+    /// window only, not saved: each time OrthoStreamXP opens it is on again.
+    /// </summary>
+    public bool DeparturePrefetch { get; set; } = true;
+
     /// <summary>X-Plane was already running when the mount started, so it has not seen the photo scenery.</summary>
     public bool XPlaneWasRunningAtStart { get; private set; }
 
@@ -94,6 +100,15 @@ internal sealed class MountController : ObservableObject
     public DateTime StartedAt { get; private set; }
 
     public MountStatus? Status() => _session?.Status();
+
+    /// <summary>The running session uses SimBrief (a SimBrief user is set and the switch is on).</summary>
+    public bool UsesSimBrief => State == MountState.Running && _session is { UsesSimBrief: true };
+
+    /// <summary>Asks SimBrief for the latest flight plan again (the Home page's button); what came of it, or null without one.</summary>
+    public Task<string>? ReloadFlightPlanAsync() => State == MountState.Running ? _session?.ReloadFlightPlanAsync() : null;
+
+    /// <summary>The flight plan the running session fetched as it started (Home's SimBrief line), or null without one.</summary>
+    public Task<string>? FirstFlightPlanAsync() => State == MountState.Running ? _session?.FirstFlightPlanAsync() : null;
 
     /// <summary>The flight report of the session stopped last in this window (null before one stops, or without a flight).</summary>
     public Tuning.FlightReport? LastReport { get; private set; }
@@ -132,6 +147,11 @@ internal sealed class MountController : ObservableObject
                 Log.Configure(settings.LogOutput, settings.LogPath, settings.LogDetail);
                 if (settings.LogOutput.HasFlag(LogOutput.File)) Log.Info($"Log file: {settings.LogPath}{(settings.LogDetail ? " (detailed)" : "")}");
                 Log.Info($"Settings file: {path}");
+                if (!DeparturePrefetch && settings.SimBriefUser is not null)
+                {
+                    settings = settings with { SimBriefUser = null };
+                    Log.Info("SimBrief: the departure prefetch is off for this session");
+                }
                 return MountSession.Start(settings);
             }).ConfigureAwait(true);
             XPlaneWasRunningAtStart = SystemCheck.IsXPlaneRunning();
@@ -161,7 +181,7 @@ internal sealed class MountController : ObservableObject
                 session.Dispose();
                 // The streamed textures' RAM copies were large arrays. An ordinary collection frees them but keeps the
                 // memory for reuse (3.9 GB stayed with an idle window); an aggressive one gives it back to Windows.
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+                PrewarmMemory.GiveBack();
             }).ConfigureAwait(true);
             Log.Step("OrthoStreamXP stopped: the photo scenery is no longer shown to X-Plane");
         }

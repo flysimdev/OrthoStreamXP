@@ -71,7 +71,7 @@
                 <DataTemplate>
                     <StackPanel Margin="0,0,8,0">
                         <Rectangle x:Name="Bar" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="{DynamicResource ControlStrongFillColorDisabledBrush}" />
-                        <TextBlock x:Name="Label" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                        <TextBlock x:Name="Label" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorTertiaryBrush}">
                             <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=". " /><Run Text="{Binding Title, Mode=OneWay}" />
                         </TextBlock>
                     </StackPanel>
@@ -273,12 +273,101 @@
                     <ItemsControl ItemsSource="{Binding Presets}" ItemTemplate="{StaticResource PresetChoice}" Focusable="False" />
                 </StackPanel>
 
-                <!-- 6. Ready -->
+                <!-- 6. SimBrief -->
                 <StackPanel>
                     <StackPanel.Style>
                         <Style TargetType="StackPanel" BasedOn="{StaticResource StepPanel}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Step}" Value="5"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="Do you plan your flights with SimBrief?" Style="{StaticResource Heading}" />
+                    <TextBlock Style="{StaticResource Secondary}" Margin="0,0,0,16"
+                               Text="Optional. OrthoStreamXP reads your latest flight plan and builds the departure, arrival and climb ahead, so the scenery is sharp sooner. Leave it empty to skip." />
+                    <TextBox Text="{Binding SimBriefUser, UpdateSourceTrigger=PropertyChanged, Delay=300}" AutomationProperties.Name="SimBrief username or Pilot ID" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="Your SimBrief username, or your Pilot ID (the number in your SimBrief account settings)." />
+                    <Border Style="{StaticResource RowCard}" DataContext="{Binding SimBriefTest}" Margin="0,16,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                                <TextBlock Text="Check your SimBrief account" />
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"
+                                           Text="Looks up your latest flight plan, so you know OrthoStreamXP finds it." />
+                                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding Status}"
+                                           Visibility="{Binding Status, Converter={StaticResource Visible}}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Succeeded}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Failed}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                            <Button Grid.Column="1" VerticalAlignment="Center" Content="{Binding RunText}" Command="{Binding Run}" Padding="12,4"
+                                    AutomationProperties.Name="Test SimBrief connection" />
+                        </Grid>
+                    </Border>
+                    <!-- Only with a username: how much the prefetch may download, and the alternate -->
+                    <StackPanel Visibility="{Binding HasSimBriefUser, Converter={StaticResource Visible}}">
+                        <Border Style="{StaticResource RowCard}" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                                    <TextBlock Text="Download limit per session" />
+                                    <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap" Text="{x:Static gui:SimBriefText.LimitHelp}" />
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" Width="300" VerticalAlignment="Center" ItemsSource="{Binding SimBriefLimits}" DisplayMemberPath="Label"
+                                          SelectedItem="{Binding SimBriefLimit}" AutomationProperties.Name="SimBrief download limit per session" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource RowCard}" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE946;" VerticalAlignment="Top" Margin="0,2,12,0"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Grid.Column="1" Style="{StaticResource Caption}" TextWrapping="Wrap" Text="{x:Static gui:SimBriefText.LimitWhy}" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource RowCard}" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                                    <TextBlock Text="Also build the alternate airport" />
+                                    <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap" Text="{x:Static gui:SimBriefText.AlternateHelp}" />
+                                </StackPanel>
+                                <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center" IsChecked="{Binding SimBriefAlternate}"
+                                          AutomationProperties.Name="Also build the alternate airport" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 7. Ready -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource StepPanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Step}" Value="6"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>

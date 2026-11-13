@@ -139,6 +139,13 @@ How dark it must be is set in the settings file (**Show the file**), not on the 
 
 After flights of 10 minutes or more, Home may suggest settings for your preset (see [Flying › Tuning suggestions](flying.md#tuning-suggestions)). The tab lists each setting the tuning changed, with the preset's own value beside it. **Reset to defaults** puts every setting back to the preset's tested values and forgets what was tuned; it asks first. The folders, the picture source and *Downloads at once* stay as they are.
 
+## SimBrief
+
+- **SimBrief username:** your SimBrief username or Pilot ID. Empty: SimBrief is off.
+- **Test SimBrief connection:** looks up your latest flight plan, so you know OrthoStreamXP finds it.
+- **Download limit per session:** the most the SimBrief prefetch may download per streaming session, in MB (0: no limit). See [Why there is a download limit](simbrief.md#why-there-is-a-download-limit).
+- **Also build the alternate airport:** builds the alternate too, after the arrival. Off by default.
+
 ## Other
 
 ![Settings: Other](images/settings-other.png)

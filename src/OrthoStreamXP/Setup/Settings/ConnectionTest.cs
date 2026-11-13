@@ -134,7 +134,7 @@ internal static class ConnectionTest
             AutomaticDecompression = DecompressionMethods.None,
         })
         { Timeout = TimeSpan.FromSeconds(10) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("orthostreamxp/0.2");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd(HttpIdentity.UserAgent);
 
         using IEnumerator<(int X, int Y)> tiles = TestTiles(provider).GetEnumerator();
         // Connections are opened first, so the first round measures downloads and not their set-up.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using OrthoStreamXP.Setup;
@@ -30,17 +31,21 @@ internal sealed class FolderOption(string path, string description, Action<Folde
 
 /// <summary>
 /// The first-run setup: checks WinFsp, finds X-Plane, asks for the folder of the person's own scenery packages,
-/// and lets them pick a cache folder and a quality; then writes orthostreamxp.ini.
+/// lets them pick a cache folder and a quality, and optionally their SimBrief account (departure prefetch); then writes
+/// orthostreamxp.ini.
 /// </summary>
 internal sealed class SetupViewModel : ObservableObject
 {
-    public static readonly string[] StepTitles = ["Welcome", "X-Plane", "Scenery", "Cache", "Quality", "Ready"];
+    public static readonly string[] StepTitles = ["Welcome", "X-Plane", "Scenery", "Cache", "Quality", "SimBrief", "Ready"];
 
     private readonly MainViewModel _main;
     private int _step;
     private bool _winFsp;
     private string? _xplane, _packages;
     private string _cache;
+    private string _simBriefUser;
+    private Choice _simBriefLimit;
+    private bool _simBriefAlternate;
     /// <summary>The cache folder came from the settings or the person: it no longer follows the packages folder.</summary>
     private bool _cacheChosen;
     private QualityPreset _preset = PresetMemory.Recommended.Preset;
@@ -71,6 +76,13 @@ internal sealed class SetupViewModel : ObservableObject
         QualityPreset recommended = PresetMemory.Recommended.Preset;
         Preset = QualityPreset.ForLevel(existing.GetInt("level-change") ?? recommended.Level) ?? recommended;
         IsRerun = existing.Get("cache") is not null;
+        _simBriefUser = existing.Get("simbrief-user") ?? "";
+        SimBriefTest = new SimBriefTestViewModel(_main.MeshHttp, () => SimBriefUser);
+        int? limit = existing.GetInt("simbrief-download-limit");
+        SimBriefLimits = SimBriefText.LimitChoices(limit);
+        string chosen = (limit ?? MountSettings.DefaultSimBriefDownloadLimitMb).ToString(CultureInfo.InvariantCulture);
+        _simBriefLimit = SimBriefLimits.First(c => c.Value == chosen);
+        _simBriefAlternate = existing.GetBool("simbrief-alternate") == true;
         ConnectionTest = new ConnectionTestViewModel(
             () => existing.Get("texture-provider") ?? "bing,esri",
             () => _main.Mount.State == MountState.Stopped,
@@ -146,6 +158,8 @@ internal sealed class SetupViewModel : ObservableObject
     public ObservableCollection<FolderOption> XPlaneOptions { get; }
     public ObservableCollection<FolderOption> PackageOptions { get; }
     public IReadOnlyList<PresetOption> Presets { get; }
+    /// <summary>The SimBrief step's "Test SimBrief connection".</summary>
+    public SimBriefTestViewModel SimBriefTest { get; }
     /// <summary>The connection test above the presets: the recommendation follows its speed.</summary>
     public ConnectionTestViewModel ConnectionTest { get; }
     public ICommand Back { get; }
@@ -275,6 +289,46 @@ internal sealed class SetupViewModel : ObservableObject
         }
     }
 
+    /// <summary>SimBrief username or Pilot ID (optional): the departure of the latest flight plan is built ahead.</summary>
+    public string SimBriefUser
+    {
+        get => _simBriefUser;
+        set
+        {
+            if (!Set(ref _simBriefUser, value?.Trim() ?? "")) return;
+            SimBriefTest.Reset();
+            Raise(nameof(HasSimBriefUser));
+            Raise(nameof(Summary));
+        }
+    }
+
+    /// <summary>The limit and the alternate apply only with a username.</summary>
+    public bool HasSimBriefUser => SimBriefUser.Length > 0;
+
+    /// <summary>The SimBrief step's download limits; a value set by hand in the file is one of them.</summary>
+    public IReadOnlyList<Choice> SimBriefLimits { get; }
+
+    /// <summary>The most the SimBrief prefetch may download per session (<c>simbrief-download-limit</c>).</summary>
+    public Choice SimBriefLimit
+    {
+        get => _simBriefLimit;
+        set
+        {
+            if (value is not null && Set(ref _simBriefLimit, value)) Raise(nameof(Summary));
+        }
+    }
+
+    /// <summary>Build the alternate airport too (<c>simbrief-alternate</c>).</summary>
+    public bool SimBriefAlternate
+    {
+        get => _simBriefAlternate;
+        set
+        {
+            if (Set(ref _simBriefAlternate, value)) Raise(nameof(Summary));
+        }
+    }
+
+
     public bool StartNow
     {
         get => _startNow;
@@ -283,7 +337,10 @@ internal sealed class SetupViewModel : ObservableObject
 
     public string Summary =>
         $"X-Plane: {_xplane}\nScenery packages: {string.Join(", ", SystemCheck.PackagesIn(_packages))} in {_packages}\n" +
-        $"Quality: {Preset.Name}\nCache: {CacheFolder}";
+        $"Quality: {Preset.Name}\nCache: {CacheFolder}\n" +
+        $"SimBrief: {(SimBriefUser.Length > 0 ? $"on (your flight's scenery is built ahead, {LimitShort}{(SimBriefAlternate ? ", with the alternate" : "")})" : "not used")}";
+
+    private string LimitShort => SimBriefLimit.Value == "0" ? "no download limit" : $"up to {SimBriefLimit.Value} MB per session";
 
     public string? Error
     {
@@ -373,6 +430,11 @@ internal sealed class SetupViewModel : ObservableObject
                 settings = SettingsDocument.CreateNew(path, _xplane!, _packages!, CacheFolder, Preset);
             }
             if (_testedWorkers is { } workers) settings.Set("download-workers", workers);
+            settings.Set("simbrief-user", SimBriefUser.Length > 0 ? SimBriefUser : null);
+            // Defaults stay out of the file, so a later default applies.
+            bool defaultLimit = SimBriefLimit.Value == MountSettings.DefaultSimBriefDownloadLimitMb.ToString(CultureInfo.InvariantCulture);
+            settings.Set("simbrief-download-limit", defaultLimit ? null : SimBriefLimit.Value);
+            settings.Set("simbrief-alternate", SimBriefAlternate ? "on" : null);
             Directory.CreateDirectory(CacheFolder);
             settings.Save();
             Log.Info($"Setup saved the settings to {path}");

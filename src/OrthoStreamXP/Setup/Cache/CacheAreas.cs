@@ -93,7 +93,9 @@ internal static class CacheAreas
         if (limitBytes <= 0 || total <= limitBytes) return ([], 0);
         long target = limitBytes * 9 / 10;
         var remove = new HashSet<AreaName>();
-        foreach (CacheArea area in areas.OrderBy(a => a.LastUsedUtc))
+        // An area X-Plane never opened (prefetched for a flight that never went there)
+        // goes before every area really flown: its newest file write would otherwise make it look used just now.
+        foreach (CacheArea area in areas.OrderBy(a => usage.LastUsed(a.Name) is null ? 0 : 1).ThenBy(a => a.LastUsedUtc))
         {
             if (total <= target) break;
             remove.Add(area.Name);

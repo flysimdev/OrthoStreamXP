@@ -35,6 +35,21 @@ internal sealed class SceneryLoads(ViewTracker view)
     private readonly Lock _gate = new();
     private readonly Dictionary<SceneryTile, DateTime> _loaded = [];
 
+    /// <summary>
+    /// The DSF tiles X-Plane 12 loads around a place: three rows (the place's and one either side) by four columns,
+    /// leaning towards the nearer half of the place's column (52.46°N 9.68°E: latitudes 51-53, longitudes 8-11).
+    /// </summary>
+    public static IReadOnlyList<(int Lat, int Lon)> TilesAround(double lat, double lon)
+    {
+        int row = (int)Math.Floor(lat), col = (int)Math.Floor(lon);
+        int west = lon - col >= 0.5 ? col - 1 : col - 2;
+        var tiles = new List<(int, int)>(12);
+        for (int r = row - 1; r <= row + 1; r++)
+            for (int c = west; c <= west + 3; c++)
+                if (r is >= -90 and < 90) tiles.Add((r, ((c + 180) % 360 + 360) % 360 - 180));
+        return tiles;
+    }
+
     /// <summary>Notes a file X-Plane opened; a DSF not opened in the last minutes is logged.</summary>
     public void Opened(VirtualPath path, string package)
     {

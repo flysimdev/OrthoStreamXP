@@ -84,6 +84,62 @@ public sealed class XPlaneUdpTests
         try { await fake; } catch (OperationCanceledException) { }
     }
 
+    [Fact]
+    public void The_aircrafts_ground_speed_and_on_ground_flag_are_asked_for_with_every_position()
+    {
+        // R6: X-Plane's own values for the gate and the takeoff roll; only the screen and the date are asked for once a second.
+        Assert.Contains(("sim/flightmodel/position/groundspeed", XPlaneUdp.GroundSpeedIndex), XPlaneUdp.CameraDatarefs);
+        Assert.Contains(("sim/flightmodel/failures/onground_any", XPlaneUdp.OnGroundIndex), XPlaneUdp.CameraDatarefs);
+        Assert.False(XPlaneUdp.Rare(XPlaneUdp.GroundSpeedIndex));
+        Assert.False(XPlaneUdp.Rare(XPlaneUdp.OnGroundIndex));
+        Assert.True(XPlaneUdp.Rare(XPlaneUdp.FieldOfViewIndex) && XPlaneUdp.Rare(XPlaneUdp.WindowWidthIndex) && XPlaneUdp.Rare(XPlaneUdp.DateIndex));
+        Assert.Equal(XPlaneUdp.CameraDatarefs.Count, XPlaneUdp.CameraDatarefs.Select(d => d.Index).Distinct().Count());
+        Assert.All(XPlaneUdp.CameraDatarefs, d => Assert.InRange(d.Index, XPlaneUdp.ElevationIndex, XPlaneUdp.ElevationIndex + XPlaneUdp.CameraDatarefs.Count - 1));
+    }
+
+    [Fact]
+    public async Task The_camera_report_carries_XPlanes_ground_speed_and_on_ground_flag()
+    {
+        using var xplane = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        var xplaneAddress = (IPEndPoint)xplane.Client.LocalEndPoint!;
+        using var stop = new CancellationTokenSource();
+        Task fake = Task.Run(async () =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                UdpReceiveResult request;
+                try
+                {
+                    request = await xplane.ReceiveAsync(stop.Token);
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    continue;
+                }
+                byte[] answer = Answer((XPlaneUdp.GroundSpeedIndex, 10.29f), (XPlaneUdp.OnGroundIndex, 1f),
+                    (XPlaneUdp.LatitudeIndex, 51.10872f), (XPlaneUdp.LongitudeIndex, 16.86611f));
+                await xplane.SendAsync(answer, request.RemoteEndPoint, stop.Token);
+            }
+        }, stop.Token);
+
+        var cameras = new ConcurrentQueue<CameraReport>();
+        var options = new PositionOptions(FreePort(), xplaneAddress, RadiusKm: 5, MaxTextures: 8, LookaheadSeconds: 180);
+        using (var listener = new AircraftPositionListener([new PrefetchTarget(new TextureCatalog(), _ => 0)], options, onCamera: cameras.Enqueue))
+        {
+            listener.Start();
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (cameras.IsEmpty && DateTime.UtcNow < deadline) await Task.Delay(50, TestContext.Current.CancellationToken);
+            Assert.True(cameras.TryPeek(out CameraReport? camera), "no position arrived");
+            Assert.Equal(20, camera.GroundSpeedKt!.Value, 0); // 10.29 m/s
+            Assert.True(camera.OnGround);
+            Assert.Equal(20, listener.Latest!.GroundSpeedKt!.Value, 0);
+            Assert.True(listener.Latest.OnGround);
+        }
+
+        await stop.CancelAsync();
+        try { await fake; } catch (OperationCanceledException) { }
+    }
+
     private static byte[] Answer(params (int Index, float Value)[] values)
     {
         byte[] packet = new byte[5 + 8 * values.Length];

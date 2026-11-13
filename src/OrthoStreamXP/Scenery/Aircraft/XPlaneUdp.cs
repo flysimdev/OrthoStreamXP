@@ -35,10 +35,17 @@ internal static class XPlaneUdp
         ("sim/time/local_date_days", 4013),
         // The sun's height above the horizon in degrees: day, dusk and night in the log.
         ("sim/graphics/scenery/sun_pitch_degrees", 4014),
+        // The aircraft's own ground speed (m/s) and whether it stands on the ground (1): the takeoff roll and the gate,
+        // independent of where the camera is (an outside view moves and lifts it).
+        ("sim/flightmodel/position/groundspeed", 4015),
+        ("sim/flightmodel/failures/onground_any", 4016),
     ];
 
     public const int ElevationIndex = 4003, HeightAglIndex = 4004, LocalXIndex = 4005, ViewXIndex = 4008, FieldOfViewIndex = 4011, WindowWidthIndex = 4012,
-        DateIndex = 4013, SunPitchIndex = 4014;
+        DateIndex = 4013, SunPitchIndex = 4014, GroundSpeedIndex = 4015, OnGroundIndex = 4016;
+
+    /// <summary>The values that change rarely (screen, field of view, date): asked for once a second, not with every position.</summary>
+    public static bool Rare(int index) => index is FieldOfViewIndex or WindowWidthIndex or DateIndex;
 
     /// <summary>
     /// An RREF request: X-Plane then sends the dataref's value <paramref name="timesPerSecond"/> times a second to

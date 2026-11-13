@@ -7,13 +7,14 @@ OrthoStreamXP adds real-world aerial photos to your X-Plane 12 scenery while you
 ## Contents
 
 1. [Installation](installation.md): what you need and how to install it.
-2. [First setup](first-setup.md): the six-step setup that runs the first time you open OrthoStreamXP.
+2. [First setup](first-setup.md): the seven-step setup that runs the first time you open OrthoStreamXP.
 3. [Flying](flying.md): the start order, the Home page, and the report you get after each flight.
-4. [Settings](settings.md): quality and ground detail, folders, downloads, colours, seasons and exposure, night lights and photos at night.
-5. [Cache](cache.md): how much disk space the scenery uses and how to free it.
-6. [Packages](packages.md): downloading the ground mesh of a whole region, the quickest way to get scenery packages.
-7. [Troubleshooting](troubleshooting.md): common problems, the log, updates, uninstalling and reporting a bug.
-8. [Questions and answers](faq.md): what OrthoStreamXP does and does not do, choosing the packages folder, switching from AutoOrtho.
+4. [SimBrief](simbrief.md): building your SimBrief flight's scenery before X-Plane needs it (optional).
+5. [Settings](settings.md): quality and ground detail, folders, downloads, colours, seasons and exposure, night lights and photos at night.
+6. [Cache](cache.md): how much disk space the scenery uses and how to free it.
+7. [Packages](packages.md): downloading the ground mesh of a whole region, the quickest way to get scenery packages.
+8. [Troubleshooting](troubleshooting.md): common problems, the log, updates, uninstalling and reporting a bug.
+9. [Questions and answers](faq.md): what OrthoStreamXP does and does not do, choosing the packages folder, switching from AutoOrtho.
 
 ## The short version
 

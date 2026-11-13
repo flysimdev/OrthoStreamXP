@@ -31,6 +31,19 @@ internal static class ReadPattern
         return last > first ? (first + 1, first + 1) : (null, last + 1);
     }
 
+    /// <summary>
+    /// The coarsest level X-Plane can be after: its smallest read is the file's last 64 KB chunk, which begins inside a
+    /// finer level whose tail it holds (<see cref="WantedLevel"/>), so it is after the level that follows. A 4096 px
+    /// texture's last chunk starts in level 3: X-Plane takes at least level 4 (256 px) of every texture it loads, however
+    /// far, which for a ZL18 texture is two levels finer than its base tile.
+    /// </summary>
+    internal static int CoarsestRead(DdsLayout layout)
+    {
+        long start = Math.Max(Dds.HeaderSize, (layout.Length - 1) / HeaderChunk * HeaderChunk);
+        int first = layout.MipAt(start);
+        return start == layout.Offset(first) ? first : Math.Min(first + 1, layout.Levels - 1);
+    }
+
     /// <summary>Notes a read on the handle for <see cref="WantedLevel"/>: where it ended, and where the header chunk did.</summary>
     internal static void NoteRead(ReadCursor cursor, long end, bool headerChunk)
     {

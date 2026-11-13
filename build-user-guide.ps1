@@ -24,7 +24,7 @@ if (-not $browser) { throw 'Google Chrome or Microsoft Edge is needed to print t
 
 # The order of the guide's contents (docs\README.md). The pages keep their names so that pandoc's --file-scope
 # turns the links between them (settings.md#quality) into links inside the PDF.
-$pages = 'README', 'installation', 'first-setup', 'flying', 'settings', 'cache', 'packages', 'troubleshooting', 'faq'
+$pages = 'README', 'installation', 'first-setup', 'flying', 'simbrief', 'settings', 'cache', 'packages', 'troubleshooting', 'faq'
 $work = 'artifacts\user-guide'
 if (Test-Path $work) { Remove-Item $work -Recurse -Force }
 New-Item -ItemType Directory $work | Out-Null

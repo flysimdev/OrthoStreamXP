@@ -23,6 +23,7 @@ Traditional photo scenery often requires downloading and building large areas be
 - **Scenery on demand** — download imagery as X-Plane needs it, instead of preparing entire regions in advance.
 - **Less disk space wasted** — keep the areas you fly and automatically remove older scenery when your cache reaches its limit.
 - **Better scenery ahead** — OrthoStreamXP follows your aircraft and downloads upcoming areas before you reach them.
+- **SimBrief flights ready sooner** — optionally, with your SimBrief username, the departure is built while X-Plane loads and the arrival and climb while you sit at the gate.
 - **Simple quality settings** — choose Balanced, Sharp, Ultra, or Extra without learning dozens of technical parameters.
 - **Settings that adapt to your setup** — test your connection before the first flight to get a recommended preset, and after a sufficiently long flight, get recommendations based on how the scenery performed on your PC and internet connection. You decide whether to apply them.
 - **Even colours** — optionally soften the patchwork look where neighbouring photos were taken on different days, so a grey, hazy patch stands out less.

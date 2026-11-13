@@ -48,7 +48,7 @@ public sealed class LoadMeasureTests
         }
         lock (lines)
         {
-            string[] loaded = [.. lines.Where(l => l.Contains("scenery tile", StringComparison.Ordinal))];
+            string[] loaded = [.. lines.Where(l => l.Contains("X-Plane loads the scenery tile", StringComparison.Ordinal))]; // not the lines of tests running beside it
             Assert.Equal(2, loaded.Length);
             Assert.Contains("+47+010 of Europe; no position from X-Plane yet", loaded[0], StringComparison.Ordinal);
             Assert.Contains("+46+010", loaded[1], StringComparison.Ordinal);
