@@ -70,6 +70,10 @@ internal sealed class MainViewModel : ObservableObject
         Settings = new SettingsViewModel(this);
         Cache = new CacheViewModel(this);
         Packages = new PackagesViewModel(Mount, Preferences, MeshHttp, MeshInstalls, PackagesFolder);
+        // The Build tab sets the packages folder through the Settings page, so that page shows it and checks it as its own box does.
+        BuildScenery = new BuildSceneryViewModel(Mount, () => SettingsDocument.Load(SettingsDocument.DefaultPath).Get("xplane"), PackagesFolder,
+            folder => Settings.PackagesFolder = folder, new SceneryBuildPreferencesStore(SceneryBuildPreferencesStore.DefaultPath));
+        PackagesPage = new PackagesPageViewModel(Packages, BuildScenery);
         Scenery = new SceneryViewModel(Mount, () => SettingsDocument.Load(SettingsDocument.DefaultPath).Get("xplane"));
         Airports = new AirportsViewModel(Mount, () => SettingsDocument.Load(SettingsDocument.DefaultPath).Get("xplane"));
         About = new AboutViewModel();
@@ -78,7 +82,7 @@ internal sealed class MainViewModel : ObservableObject
             new NavItem("Home", "", Home),
             new NavItem("Settings", "", Settings),
             new NavItem("Cache", "", Cache),
-            new NavItem("Packages", "", Packages),
+            new NavItem("Packages", "", PackagesPage),
             new NavItem("X-Plane Custom Scenery", "", Scenery),
             new NavItem("Airports", "", Airports),
             new NavItem("Log", "", LogPage),
@@ -105,6 +109,10 @@ internal sealed class MainViewModel : ObservableObject
     public HttpClient MeshHttp { get; } = PackagesViewModel.CreateHttpClient();
     /// <summary>One region install or delete at a time, from the Packages page or the setup.</summary>
     public InstallSlot MeshInstalls { get; } = new();
+    /// <summary>Photo-terrain packages made from X-Plane's own Global Scenery, for the tiles picked on a map: the Packages page's Build tab.</summary>
+    public BuildSceneryViewModel BuildScenery { get; }
+    /// <summary>The Packages page: its Download and Build tabs.</summary>
+    public PackagesPageViewModel PackagesPage { get; }
     /// <summary>X-Plane's scenery_packs.ini, to switch packages on or off.</summary>
     public SceneryViewModel Scenery { get; }
     /// <summary>Flattens the terrain under an airport, one at a time, and undoes it.</summary>

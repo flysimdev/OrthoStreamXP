@@ -10,7 +10,7 @@
         <DataTemplate DataType="{x:Type gui:HomeViewModel}"><gui:HomeView /></DataTemplate>
         <DataTemplate DataType="{x:Type gui:SettingsViewModel}"><gui:SettingsView /></DataTemplate>
         <DataTemplate DataType="{x:Type gui:CacheViewModel}"><gui:CacheView /></DataTemplate>
-        <DataTemplate DataType="{x:Type gui:PackagesViewModel}"><gui:PackagesView /></DataTemplate>
+        <DataTemplate DataType="{x:Type gui:PackagesPageViewModel}"><gui:PackagesView /></DataTemplate>
         <DataTemplate DataType="{x:Type gui:SceneryViewModel}"><gui:SceneryView /></DataTemplate>
         <DataTemplate DataType="{x:Type gui:AirportsViewModel}"><gui:AirportsView /></DataTemplate>
         <DataTemplate DataType="{x:Type gui:LogViewModel}"><gui:LogView /></DataTemplate>
