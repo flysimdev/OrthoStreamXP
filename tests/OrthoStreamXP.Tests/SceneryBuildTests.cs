@@ -38,6 +38,19 @@ public sealed class SceneryBuildTests : IDisposable
     }
 
     [Fact]
+    public void The_built_packages_are_named_unlike_the_downloaded_regions_and_their_overlays_are_taken_for_overlays()
+    {
+        PackageOptions options = SceneryBuildPreferences.ToPackageOptions(@"D:\Packages");
+
+        Assert.Equal(["OrthoGlobal_Europe_XP", "OrthoGlobal_NorthAmerica_XP", "OrthoGlobal_SouthAmerica_XP", "OrthoGlobal_Africa_XP",
+            "OrthoGlobal_Asia_XP", "OrthoGlobal_AustraliaPacific_XP"], Continent.All.Select(options.PackageNameOf));
+        Assert.Equal("OrthoGlobal_Overlays_XP", options.OverlayPackageName);
+        Assert.All(Continent.All, c => Assert.DoesNotContain(Scenery.SceneryPacks.DownloadedPrefix, options.PackageNameOf(c), StringComparison.OrdinalIgnoreCase));
+        Assert.True(Scenery.SceneryPacks.IsOverlays(options.OverlayPackageName));
+        Assert.All(Continent.All, c => Assert.False(Scenery.SceneryPacks.IsOverlays(options.PackageNameOf(c))));
+    }
+
+    [Fact]
     public void The_choices_are_kept_between_sessions()
     {
         var store = new SceneryBuildPreferencesStore(_tree.PathOf("scenery-build.json"));

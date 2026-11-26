@@ -162,16 +162,19 @@
         <member name="T:OrthoGlobalXP.Building.PackageOptions">
             <summary>
             Where the packages go and how their tiles are made. The tiles are split by continent, as OrthoStreamXP's own packages
-            are: <c>OrthoGlobal_Eur</c>, <c>OrthoGlobal_NA</c>, <c>OrthoGlobal_SA</c>, <c>OrthoGlobal_Afr</c>, <c>OrthoGlobal_Asi</c>
-            and <c>OrthoGlobal_AusPac</c> (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), and their roads, forests and buildings all go to
-            <c>OrthoGlobal_Overlays</c>, beside them in <see cref="P:OrthoGlobalXP.Building.PackageOptions.OutputFolder"/>.
+            are: <c>OrthoGlobal_Europe_XP</c>, <c>OrthoGlobal_NorthAmerica_XP</c>, <c>OrthoGlobal_SouthAmerica_XP</c>,
+            <c>OrthoGlobal_Africa_XP</c>, <c>OrthoGlobal_Asia_XP</c> and <c>OrthoGlobal_AustraliaPacific_XP</c> (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>),
+            and their roads, forests and buildings all go to <c>OrthoGlobal_Overlays_XP</c>, beside them in <see cref="P:OrthoGlobalXP.Building.PackageOptions.OutputFolder"/>.
             </summary>
         </member>
         <member name="F:OrthoGlobalXP.Building.PackageOptions.OverlaySuffix">
             <summary>
-            Added to the prefix for the overlay package (OrthoGlobal_Overlays). OrthoStreamXP takes a package whose name says
+            Added to the prefix for the overlay package (OrthoGlobal_Overlays_XP). OrthoStreamXP takes a package whose name says
             overlays for one: it lists it above the photo packages, and reads its roads to light the towns at night.
             </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageOptions.NameEnd">
+            <summary>Ends every package's name (OrthoGlobal_Europe_XP): made from X-Plane's own scenery.</summary>
         </member>
         <member name="F:OrthoGlobalXP.Building.PackageOptions.OrthoStreamXPPrefix">
             <summary>
@@ -183,7 +186,7 @@
             <summary>The folder the packages are made in, such as OrthoStreamXP's packages folder (base-packages).</summary>
         </member>
         <member name="P:OrthoGlobalXP.Building.PackageOptions.PackagePrefix">
-            <summary>The start of the packages' names: each is the prefix, '_' and its continent's suffix (OrthoGlobal_Eur).</summary>
+            <summary>The start of the packages' names: each is the prefix, '_', its continent and <see cref="F:OrthoGlobalXP.Building.PackageOptions.NameEnd"/> (OrthoGlobal_Europe_XP).</summary>
         </member>
         <member name="P:OrthoGlobalXP.Building.PackageOptions.AirportZoom">
             <summary>Finer photos near airports, or null for the same zoom everywhere.</summary>
@@ -230,10 +233,10 @@
             </summary>
         </member>
         <member name="M:OrthoGlobalXP.Building.PackageOptions.PackageNameOf(OrthoGlobalXP.Regions.Continent)">
-            <summary>The photo package of a continent's tiles: OrthoGlobal_Eur.</summary>
+            <summary>The photo package of a continent's tiles: OrthoGlobal_Europe_XP.</summary>
         </member>
         <member name="P:OrthoGlobalXP.Building.PackageOptions.OverlayPackageName">
-            <summary>The one package of every continent's roads, forests and buildings, beside the photo packages.</summary>
+            <summary>The one package of every continent's roads, forests and buildings, beside the photo packages: OrthoGlobal_Overlays_XP.</summary>
         </member>
         <member name="T:OrthoGlobalXP.Building.PackageTiles">
             <summary>The tiles packages already have a DSF for.</summary>
@@ -723,14 +726,16 @@
             <summary>
             One of the six continents the photo packages are split by, as OrthoStreamXP splits the meshes it downloads
             (OrthoStream_Eur, OrthoStream_NA...): <see cref="P:OrthoGlobalXP.Regions.Continent.Id"/> is OrthoStreamXP's id for it and <see cref="P:OrthoGlobalXP.Regions.Continent.Suffix"/> ends the
-            package's name. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
+            names of those downloaded packages. Ours are named by <see cref="P:OrthoGlobalXP.Regions.Continent.NameInPackages"/> instead (OrthoGlobal_Europe_XP), so
+            the two are told apart at a glance. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
             </summary>
         </member>
-        <member name="M:OrthoGlobalXP.Regions.Continent.#ctor(System.String,System.String,System.String)">
+        <member name="M:OrthoGlobalXP.Regions.Continent.#ctor(System.String,System.String,System.String,System.String)">
             <summary>
             One of the six continents the photo packages are split by, as OrthoStreamXP splits the meshes it downloads
             (OrthoStream_Eur, OrthoStream_NA...): <see cref="P:OrthoGlobalXP.Regions.Continent.Id"/> is OrthoStreamXP's id for it and <see cref="P:OrthoGlobalXP.Regions.Continent.Suffix"/> ends the
-            package's name. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
+            names of those downloaded packages. Ours are named by <see cref="P:OrthoGlobalXP.Regions.Continent.NameInPackages"/> instead (OrthoGlobal_Europe_XP), so
+            the two are told apart at a glance. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
             </summary>
         </member>
         <member name="P:OrthoGlobalXP.Regions.Continent.All">

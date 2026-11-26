@@ -18,7 +18,8 @@ internal sealed record MapFrame(double West, double South, double East, double N
 /// <summary>
 /// The Build Scenery page: photo-terrain packages made on this PC from X-Plane's own Global Scenery (OrthoGlobalXP's
 /// engine). Tiles are picked on the map, by country or region, by name or from a list; each goes into its continent's
-/// package (OrthoGlobal_Eur, _NA…) in the chosen folder, its roads, forests and buildings into OrthoGlobal_Overlays beside
+/// package (OrthoGlobal_Europe_XP, OrthoGlobal_NorthAmerica_XP…, unlike the downloaded OrthoStream_Eur…) in the chosen
+/// folder, its roads, forests and buildings into OrthoGlobal_Overlays_XP beside
 /// them. OrthoStreamXP streams them from its next start when the folder is its packages folder.
 /// </summary>
 internal sealed class BuildSceneryViewModel : ObservableObject, IPage
@@ -184,7 +185,7 @@ internal sealed class BuildSceneryViewModel : ObservableObject, IPage
             return;
         }
         string what = Map.StateOf(t) == MapTileState.Built ? "built" : Map.IsAvailable(t) ? "X-Plane scenery" : "no X-Plane scenery (sea)";
-        HoverText = $"{t.Name}: {what} · {PackageOptions.DefaultPackagePrefix}_{Continent.Of(t).Suffix}";
+        HoverText = $"{t.Name}: {what} · {SceneryBuildPreferences.ToPackageOptions(TargetFolder).PackageNameOf(Continent.Of(t))}";
     }
 
     /// <summary>Remembers the choices and the picked tiles, for the next start.</summary>

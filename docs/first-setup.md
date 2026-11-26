@@ -25,19 +25,19 @@ If yours is not listed, click **Choose another folder…** and choose the folder
 
 ## 3. Scenery
 
-OrthoStreamXP adds the photos to **scenery packages**: the ground of an area, the shape of the terrain cut in 1° squares. There are two ways to get them.
+OrthoStreamXP adds the photos to **scenery packages**: the ground of an area, the shape of the terrain cut in 1° squares. There are two ways to get them here.
 
-### Option 1: download a region in OrthoStreamXP
+### Option 1: build your own packages
 
-The simplest way, if you have no scenery packages yet. Under **No scenery packages yet?**, click **Download a region…**. If you already chose a folder without packages, the hint turns red and **Download a region now** opens the same list.
+The simplest way, if you have no scenery packages yet. OrthoStreamXP makes them from X-Plane's own Global Scenery, here on your PC. Under **No scenery packages yet?**, click **Build your own packages…**. If you already chose a folder without packages, the hint turns red and says *No packages yet? Build your own below.*
 
 ![Setup step 3: a folder without scenery packages](images/setup-scenery-empty.png)
 
-The list of regions opens: click **Install** next to the region you fly in. The progress shows under it, and you can stop and resume the download. When it finishes, the region's folder is chosen as your scenery packages folder and **Next** becomes available.
+A map of the world opens, the same as on the **Packages** page's **Build own packages** tab. Pick the areas you fly, by name under **Pick by region or country** or by clicking tiles on the map, and click **Build the picked tiles**. Each tile takes a few seconds. When the build ends, the folder the packages were built in is chosen as your scenery packages folder and **Next** becomes available. **Stream from here** chooses it straight away.
 
-![Setup step 3: the regions to download](images/setup-scenery-download.png)
+![Setup step 3: building your own packages](images/setup-scenery-build.png)
 
-See [Packages](packages.md) for the sizes, the roads, forests and buildings, and how to update or delete a region later. You can download more regions at any time on the **Packages** page.
+See [Packages › Build own packages](packages.md#build-own-packages) for picking the tiles, the packages' names and building more later. To download a whole region's mesh instead, finish the setup with the folder you want for it, and use the **Packages** page's **Download kubilus1 packages** tab (see [Packages › Download kubilus1 packages](packages.md#download-kubilus1-packages)).
 
 ### Option 2: use your own scenery packages
 
