@@ -30,6 +30,19 @@
     <!-- Image decoding only (JPEG/PNG tiles); resizing is our own code, BC1 encoding Intel's ISPC (below). -->
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
     <PackageReference Include="Velopack" Version="1.2.161" />
+    <!-- Laminar's 7z-packed Global Scenery DSFs, read and written by OrthoGlobalXP.Core (below): its one dependency, same version. -->
+    <PackageReference Include="SharpCompress" Version="0.50.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      OrthoGlobalXP's engine (the Build Scenery page): photo-terrain packages made from X-Plane's own Global Scenery.
+      Compiled and checked in by lib\OrthoGlobalXP.Core\build.ps1; bundled into the single-file exe.
+    -->
+    <Reference Include="OrthoGlobalXP.Core">
+      <HintPath>..\..\lib\OrthoGlobalXP.Core\OrthoGlobalXP.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,241 @@
+<UserControl x:Class="OrthoStreamXP.Gui.BuildSceneryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OrthoStreamXP.Gui"
+             x:ClassModifier="internal">
+    <UserControl.Resources>
+        <!-- A colour square of the map's legend -->
+        <Style x:Key="LegendSwatch" TargetType="Border">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="LegendText" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- Text over the map: a small panel in the page's colours -->
+        <Style x:Key="MapPanel" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Margin" Value="10" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- The Packages page's Build tab: the page scrolls it -->
+    <StackPanel>
+        <TextBlock Style="{StaticResource PageIntro}"
+                   Text="Make photo scenery for any part of the world from X-Plane's own Global Scenery, here on your PC: nothing to download but the photos OrthoStreamXP streams as you fly. Each 1° tile keeps X-Plane's relief and water; its ground gets the photo textures, and X-Plane's roads, forests and buildings go into an overlay package beside it. A tile takes a few seconds." />
+        <TextBlock Text="{Binding SceneryText}" Style="{StaticResource Caption}" Margin="2,0,0,4" />
+
+        <!-- Where the packages go -->
+        <TextBlock Text="Scenery packages folder" Style="{StaticResource SectionTitle}" />
+        <Border Style="{StaticResource Card}" IsEnabled="{Binding IsIdle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" FontSize="22" Margin="0,0,14,0" VerticalAlignment="Top" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TargetFolder}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding TargetFolder}" />
+                    <TextBlock Text="{Binding TargetFolderHelp, Mode=OneTime}" Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding TargetNote}" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12"
+                               Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                               Visibility="{Binding TargetNote, Converter={StaticResource Visible}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Choose…" Command="{Binding BrowseTarget}" Margin="16,0,0,0"
+                            ToolTip="Choose the folder the packages are made in" />
+                    <Button Content="Open" Command="{Binding OpenTarget}" Margin="8,0,0,0" />
+                    <Button Content="Stream from here" Command="{Binding StreamFromTarget}" Margin="8,0,0,0"
+                            ToolTip="Set OrthoStreamXP's Scenery packages folder (Settings → Folders) to this folder, so it streams the packages built here"
+                            ToolTipService.ShowOnDisabled="True"
+                            Visibility="{Binding IsPackagesFolder, Converter={StaticResource Visible}, ConverterParameter=Invert}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- The tiles, on the map -->
+        <TextBlock Text="Tiles" Style="{StaticResource SectionTitle}" />
+        <!-- Pick by area -->
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <TextBlock Text="Pick by region or country" />
+                <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,10"
+                           Text="A continent, subregion, country, region or state: every tile it touches, borders included, that X-Plane has scenery for. Outlines: Natural Earth." />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <TextBox x:Name="RegionBox" Text="{Binding Regions.Text, UpdateSourceTrigger=PropertyChanged, Delay=200}" Padding="34,6,10,6"
+                                 GotKeyboardFocus="OnRegionBoxFocused" LostKeyboardFocus="OnRegionBoxLostFocus"
+                                 PreviewMouseLeftButtonDown="OnRegionBoxClicked" PreviewKeyDown="OnRegionBoxKey" TextChanged="OnRegionTextChanged"
+                                 AutomationProperties.Name="Search for a region or country" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="14" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="Germany, Bavaria, Western Europe…" Margin="35,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   Visibility="{Binding Text, ElementName=RegionBox, Converter={StaticResource Visible}, ConverterParameter=Invert}" />
+                    </Grid>
+                    <!-- The matches, under the search; the list never takes the focus, so typing goes on in the box. It does not take the
+                         mouse either (StaysOpen): the code behind closes it on a click elsewhere, a scroll or leaving the window. -->
+                    <Popup x:Name="RegionPopup" PlacementTarget="{Binding ElementName=RegionBox}" Placement="Bottom" VerticalOffset="4"
+                           StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade"
+                           Width="{Binding ActualWidth, ElementName=RegionBox}">
+                        <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="6" Padding="4">
+                            <ListBox x:Name="RegionList" MaxHeight="320" ItemsSource="{Binding Regions.Matches}" SelectedItem="{Binding Regions.Selected}"
+                                     Background="Transparent" BorderThickness="0" Focusable="False"
+                                     VirtualizingPanel.IsVirtualizing="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     PreviewMouseLeftButtonUp="OnRegionClicked" AutomationProperties.Name="Regions and countries">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Focusable" Value="False" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,1">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Popup>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <Button Content="Pick" Command="{Binding PickRegion}" Style="{DynamicResource AccentButtonStyle}" MinWidth="90"
+                                ToolTip="Pick its tiles that have X-Plane scenery (or press Enter in the search)" />
+                        <Button Content="Unpick" Command="{Binding DropRegion}" MinWidth="90" Margin="8,0,0,0" ToolTip="Unpick its tiles" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Caption}"
+                           Text="Click a tile to pick or drop it, Shift+drag to pick a rectangle, Ctrl+drag to drop one. Drag to move the map, scroll to zoom: zoomed in, the runways and the finer textures near them show." />
+                <Grid Margin="0,12,0,0" Height="460">
+                    <Border BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                        <local:TileMapView x:Name="MapView" Model="{Binding Map}" ShowStreetMap="{Binding ShowStreetMap}"
+                                           Runways="{Binding Runways}" AirportPreview="{Binding AirportPreview}"
+                                           Cities="{Binding Cities}" ShowCities="{Binding ShowCities}"
+                                           Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                           PickedBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                                           BuiltBrush="{DynamicResource SystemFillColorSuccessBrush}"
+                                           BuildingBrush="{DynamicResource SystemFillColorCautionBrush}"
+                                           FailedBrush="{DynamicResource SystemFillColorCriticalBrush}"
+                                           AutomationProperties.Name="Map of the tiles: click to pick or drop a tile" />
+                    </Border>
+
+                    <!-- Legend -->
+                    <Border Style="{StaticResource MapPanel}" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+                        <WrapPanel MaxWidth="560">
+                            <Border Style="{StaticResource LegendSwatch}" BorderThickness="1.5" CornerRadius="0"
+                                    BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="In X-Plane" />
+                            <Border Style="{StaticResource LegendSwatch}" Background="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="Picked" />
+                            <Border Style="{StaticResource LegendSwatch}" Background="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="Built" />
+                            <Border Style="{StaticResource LegendSwatch}" Background="{DynamicResource SystemFillColorCautionBrush}" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="Building" />
+                            <Border Style="{StaticResource LegendSwatch}" Background="{DynamicResource SystemFillColorCriticalBrush}" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="Failed" />
+                            <Border Style="{StaticResource LegendSwatch}" Background="#E84FD8" Opacity="0.7" />
+                            <TextBlock Style="{StaticResource LegendText}" Text="Airports" />
+                        </WrapPanel>
+                    </Border>
+
+                    <!-- The tile under the mouse -->
+                    <Border Style="{StaticResource MapPanel}" HorizontalAlignment="Left" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                            Visibility="{Binding HoverText, Converter={StaticResource Visible}}">
+                        <TextBlock Text="{Binding HoverText}" FontWeight="SemiBold" />
+                    </Border>
+
+                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,10">
+                        <Button Click="OnZoomIn" Width="32" Height="32" Padding="0" ToolTip="Zoom in" AutomationProperties.Name="Zoom in">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="14" />
+                        </Button>
+                        <Button Click="OnZoomOut" Width="32" Height="32" Padding="0" Margin="0,4,0,0" ToolTip="Zoom out" AutomationProperties.Name="Zoom out">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE738;" FontSize="14" />
+                        </Button>
+                        <Button Click="OnShowPicked" Width="32" Height="32" Padding="0" Margin="0,4,0,0" ToolTip="Show the picked tiles"
+                                AutomationProperties.Name="Show the picked tiles">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE9A6;" FontSize="14" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <CheckBox Content="OpenStreetMap" IsChecked="{Binding ShowStreetMap}"
+                                  ToolTip="OpenStreetMap under the tiles (downloaded as you look, kept for two weeks)" />
+                        <CheckBox Content="City names" IsChecked="{Binding ShowCities}" Margin="16,0,0,0"
+                                  ToolTip="Name the cities, more as you zoom in" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                               Visibility="{Binding ShowStreetMap, Converter={StaticResource Visible}}">
+                        <Hyperlink NavigateUri="https://www.openstreetmap.org/copyright" RequestNavigate="OnLinkClicked">© OpenStreetMap contributors</Hyperlink>
+                    </TextBlock>
+                </Grid>
+
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding Status, Converter={StaticResource Visible}}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Clear" Command="{Binding ClearPicks}" ToolTip="Drop every picked tile" />
+                        <Button Content="Stop" Command="{Binding Stop}" Margin="8,0,0,0"
+                                Visibility="{Binding IsBuilding, Converter={StaticResource Visible}}" />
+                        <Button Content="Build the picked tiles" Command="{Binding Build}" Style="{DynamicResource AccentButtonStyle}" Margin="8,0,0,0" />
+                    </StackPanel>
+                </Grid>
+                <ProgressBar Margin="0,12,0,0" Height="4" Minimum="0" Maximum="{Binding ProgressMaximum, Mode=OneWay}" Value="{Binding ProgressValue, Mode=OneWay}"
+                             Visibility="{Binding IsBuilding, Converter={StaticResource Visible}}" />
+                <TextBlock Text="{Binding RunningNote}" Style="{StaticResource Caption}" Margin="0,10,0,0"
+                           Visibility="{Binding RunningNote, Converter={StaticResource Visible}}" />
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Padding="0" Margin="0,8,0,0" Visibility="{Binding BuildLog.Count, Converter={StaticResource Visible}}">
+            <ListBox x:Name="LogLines" ItemsSource="{Binding BuildLog}" RequestBringIntoView="OnLogBringIntoView" Height="200" Background="Transparent" BorderThickness="0"
+                     FontFamily="{StaticResource MonoFont}" FontSize="12"
+                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Build log">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="12,1" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="MinHeight" Value="0" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </Border>
+        <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
+                   Text="The packages are made from your own X-Plane installation and are not for redistribution." />
+    </StackPanel>
+</UserControl>

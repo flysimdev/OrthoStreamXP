@@ -92,7 +92,7 @@ Your scenery packages are not changed: OrthoStreamXP adjusts the terrain files a
 ![Settings: Folders](images/settings-folders.png)
 
 - **X-Plane folder:** the X-Plane installation where the packages appear (in its `Custom Scenery` folder).
-- **Scenery packages folder:** the parent folder of your packages. The line below it lists the packages found. Keep the packages of each source (regions downloaded in OrthoStreamXP, Ortho4XP, OrthoStudio XP...) in a folder of their own, and choose here the one you fly with: see [Packages › One folder per source](packages.md#one-folder-per-source).
+- **Scenery packages folder:** the parent folder of your packages. The line below it lists the packages found. Keep the packages of each source (packages built or regions downloaded in OrthoStreamXP, Ortho4XP, OrthoStudio XP...) in a folder of their own, and choose here the one you fly with: see [Packages › One folder per source](packages.md#one-folder-per-source).
 - **Cache folder:** where the textures are kept. The line below it shows the free space and how much a new area takes at the current texture size.
 
 ## Pictures and download
@@ -159,7 +159,7 @@ Turn on **Light the towns at night** to give every photo tile its own lights:
 
 How many lamps are lit and how bright the houses are depends on how built up the place is: a town centre is fully lit, a village keeps all its lamps, and in the open country only a few lamps along the roads shine. Between the lights the photo stays dark; X-Plane fades the lights in at dusk by itself.
 
-The roads come from the overlay package installed with your regions (**OrthoStream_Overlays**), or from another overlay package in X-Plane's Custom Scenery. Where no overlay package covers an area, its photo tiles stay dark at night.
+The roads come from the overlay package built or installed with your packages (**OrthoGlobal_Overlays_XP** or **OrthoStream_Overlays**), or from another overlay package in X-Plane's Custom Scenery. Where no overlay package covers an area, its photo tiles stay dark at night.
 
 X-Plane loads the lights with the scenery, by day too, so they are there when night falls during a flight. The lights get the same detail as the photos under them at every distance, up to about 3 m per pixel beside the aircraft. Each tile's lights are made the first time X-Plane loads that tile, and again with more detail as you come closer; only the detail X-Plane reads is kept in the cache with the area's photos, compressed (about 50 KB per tile; a 20-minute flight around Zurich kept 160 MB), so the first flight over a new area uses a little more processor time and later flights none. Your scenery packages are not changed. **Off** is the default; a change applies from the next start.
 

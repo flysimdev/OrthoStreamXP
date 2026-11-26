@@ -49,6 +49,19 @@ internal sealed partial class MainWindow
     protected override async void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);
+        // A build stops before the window goes: the tiles under way are given up, the ones built kept.
+        if (!_closing && _main.BuildScenery.IsBuilding)
+        {
+            e.Cancel = true;
+            if (MessageBox.Show(this, "Scenery is being built. Stop the build and close?\n\nThe tiles already built are kept.",
+                    "OrthoStreamXP", MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.Cancel) != MessageBoxResult.OK)
+                return;
+            _main.BuildScenery.Stop.Execute(null);
+            while (_main.BuildScenery.IsBuilding) await Task.Delay(200).ConfigureAwait(true);
+            Close();
+            return;
+        }
+        _main.BuildScenery.SaveChoices();
         if (_closing || _main.Mount.IsStopped) return;
         e.Cancel = true;
         if (_main.Mount.IsRunning && MessageBox.Show(this,

@@ -18,11 +18,60 @@ public sealed class ViewsTests
                 app.ThemeMode = ThemeMode.Light;
 #pragma warning restore WPF0001
                 app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/orthostreamxp;component/Gui/Theme.xaml") });
-                foreach (Type view in new[] { typeof(OrthoStreamXP.Gui.HomeView), typeof(OrthoStreamXP.Gui.SettingsView), typeof(OrthoStreamXP.Gui.CacheView), typeof(OrthoStreamXP.Gui.PackagesView), typeof(OrthoStreamXP.Gui.AirportsView), typeof(OrthoStreamXP.Gui.LogView) })
+                foreach (Type view in new[] { typeof(OrthoStreamXP.Gui.HomeView), typeof(OrthoStreamXP.Gui.SettingsView), typeof(OrthoStreamXP.Gui.CacheView), typeof(OrthoStreamXP.Gui.PackagesView), typeof(OrthoStreamXP.Gui.BuildSceneryView), typeof(OrthoStreamXP.Gui.AirportsView), typeof(OrthoStreamXP.Gui.LogView) })
                 {
                     var page = (FrameworkElement)Activator.CreateInstance(view, nonPublic: true)!;
                     page.Measure(new Size(1200, 900));
                     page.Arrange(new Rect(0, 0, 1200, 900));
+                }
+
+                // The Build Scenery page with its model: its map drawn with picked and built tiles, in light and dark.
+                using (var tree = new TempTree())
+                {
+#pragma warning disable WPF0001
+                    foreach (ThemeMode theme in new[] { ThemeMode.Light, ThemeMode.Dark })
+                    {
+                        app.ThemeMode = theme;
+#pragma warning restore WPF0001
+                        var model = new OrthoStreamXP.Gui.BuildSceneryViewModel(new OrthoStreamXP.Gui.MountController(), () => null, () => tree.Root, _ => { },
+                            new OrthoStreamXP.Setup.SceneryBuildPreferencesStore(tree.PathOf("scenery-build.json")));
+                        OrthoGlobalXP.Geo.TileCoordinate picked = new(50, 14), built = new(50, 15);
+                        model.Map.SetAvailable([picked, built]);
+                        model.Map.Select([picked, built], true);
+                        model.Map.SetBuilt([built]);
+                        var page = new OrthoStreamXP.Gui.BuildSceneryView { DataContext = model };
+                        page.Measure(new Size(1000, 900));
+                        page.Arrange(new Rect(0, 0, 1000, 900));
+                        page.UpdateLayout();
+                        new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 900, 96, 96, System.Windows.Media.PixelFormats.Pbgra32).Render(page);
+                        Assert.Equal("2 tiles picked", model.SelectionText);
+                        Assert.True(model.IsPackagesFolder);
+                    }
+                }
+
+                // The Build tab sits in the Packages page's scroller: its log following its last line does not scroll the page.
+                using (var tree = new TempTree())
+                {
+                    var model = new OrthoStreamXP.Gui.BuildSceneryViewModel(new OrthoStreamXP.Gui.MountController(), () => null, () => tree.Root, _ => { },
+                        new OrthoStreamXP.Setup.SceneryBuildPreferencesStore(tree.PathOf("scenery-build.json")));
+                    var scroller = new System.Windows.Controls.ScrollViewer { Content = new OrthoStreamXP.Gui.BuildSceneryView { DataContext = model } };
+                    var window = new Window
+                    {
+                        Content = scroller, Width = 1000, Height = 500, Left = -20000, Top = -20000,
+                        WindowStyle = WindowStyle.None, ShowInTaskbar = false, ShowActivated = false,
+                    };
+                    window.Show();
+                    try
+                    {
+                        for (int i = 0; i < 50; i++) model.BuildLog.Add($"line {i}");
+                        window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+                        Assert.True(scroller.ScrollableHeight > 0);
+                        Assert.Equal(0, scroller.VerticalOffset);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
                 }
 
                 // The update window, with notes and without.
