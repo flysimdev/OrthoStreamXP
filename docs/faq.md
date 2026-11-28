@@ -14,11 +14,11 @@ It is free and open source, and it goes up to imagery zoom level 19 (the **Extra
 
 ### Does it make the terrain (the mesh) too?
 
-No, OrthoStreamXP does not make the mesh: it provides the photos. The mesh, the water masks and the coastlines come from scenery packages. Download a whole region's mesh in OrthoStreamXP itself (see [Packages](packages.md)), or use packages you already have, made by Ortho4XP, OrthoStudio XP, AutoOrtho or XPME. See [Installation › What you need](installation.md#what-you-need).
+It can. The mesh, the water masks and the coastlines come from scenery packages, and OrthoStreamXP can build them for you from X-Plane's own Global Scenery: pick the areas on the **Packages** page's **Build own packages** tab (see [Packages › Build own packages](packages.md#build-own-packages)). You can also download a whole region's mesh there, or use packages you already have, made by Ortho4XP, OrthoStudio XP, AutoOrtho or XPME. See [Installation › What you need](installation.md#what-you-need).
 
-### Why can't it use the mesh from X-Plane's default scenery?
+### Can it use the mesh from X-Plane's default scenery?
 
-Each scenery file (`.dsf`) says exactly which photo texture goes on which part of the ground. X-Plane's default scenery uses generic land textures, not photos, so there is nothing for OrthoStreamXP to put the photos on. Packages made by Ortho4XP and the tools based on it have that layout, so OrthoStreamXP can fill in their photos.
+Yes, through the packages it builds. Each scenery file (`.dsf`) says exactly which texture goes on which part of the ground, and X-Plane's default scenery uses generic land textures, not photos, so OrthoStreamXP cannot stream onto it as it is. **Build own packages** makes a copy of each tile you pick, with X-Plane's own relief, water and coastlines, whose ground uses photo textures instead. X-Plane's Global Scenery itself is only read, never changed.
 
 ### What is the difference from AutoOrtho or XPME?
 

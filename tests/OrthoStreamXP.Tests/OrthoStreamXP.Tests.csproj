@@ -16,6 +16,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OrthoStreamXP\OrthoStreamXP.csproj" />
+    <!-- The Build Scenery tests use OrthoGlobalXP's engine types directly (a plain Reference does not flow through the project). -->
+    <Reference Include="OrthoGlobalXP.Core">
+      <HintPath>..\..\lib\OrthoGlobalXP.Core\OrthoGlobalXP.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

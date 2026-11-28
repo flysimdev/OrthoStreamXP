@@ -54,8 +54,11 @@ internal sealed class SetupViewModel : ObservableObject
         _main = main;
         SettingsDocument existing = SettingsDocument.Load(SettingsDocument.DefaultPath);
         _winFsp = SystemCheck.WinFspInstalled();
-        // Before the folders are chosen below: each choice tells it where regions would go.
-        Downloads = new PackagesViewModel(_main.Mount, _main.Preferences, _main.MeshHttp, _main.MeshInstalls, () => DownloadFolder, RegionInstalled);
+        // Before the folders are chosen below: each choice tells it where packages would be built. "Stream from here" and a
+        // build that made tiles both make that folder this setup's packages folder.
+        Builder = new BuildSceneryViewModel(_main.Mount, () => _xplane, () => BuildFolder, UsePackagesFolder,
+            new SceneryBuildPreferencesStore(SceneryBuildPreferencesStore.DefaultPath));
+        Builder.TilesBuilt += (_, folder) => UsePackagesFolder(folder);
 
         XPlaneOptions = [.. SystemCheck.FindXPlaneFolders().Select(f => new FolderOption(f, "X-Plane found here", ChooseXPlane))];
         // Which packages to use is the person's own choice: nothing is searched for, only the folder chosen before is offered.
@@ -98,7 +101,12 @@ internal sealed class SetupViewModel : ObservableObject
         Back = new RelayCommand(() => Step--, () => Step > 0);
         Next = new RelayCommand(() => Step++, () => Step < StepTitles.Length - 1 && CanLeave(Step));
         Finish = new RelayCommand(() => _ = FinishAsync(), () => Step == StepTitles.Length - 1);
-        Cancel = new RelayCommand(_main.CloseSetup);
+        Cancel = new RelayCommand(() =>
+        {
+            // A build started here does not go on unseen once the setup is closed.
+            if (Builder.Stop.CanExecute(null)) Builder.Stop.Execute(null);
+            _main.CloseSetup();
+        });
         CheckWinFsp = new RelayCommand(() =>
         {
             _winFsp = SystemCheck.WinFspInstalled();
@@ -120,35 +128,35 @@ internal sealed class SetupViewModel : ObservableObject
         {
             if (Shell.PickFolder("Choose a folder for the cache", CacheFolder) is { } folder) CacheFolder = folder;
         });
-        ShowDownloads = new RelayCommand(() =>
+        ShowBuilder = new RelayCommand(() =>
         {
-            DownloadsShown = true;
-            Downloads.OnShown();
-        }, () => !DownloadsShown);
+            BuilderShown = true;
+            Builder.OnShown();
+        }, () => !BuilderShown);
     }
 
-    /// <summary>The regions of the mesh, for someone without scenery packages: installed into the folder chosen, or a suggested one.</summary>
-    public PackagesViewModel Downloads { get; }
+    /// <summary>
+    /// Photo-scenery packages built from X-Plane's own Global Scenery (the Packages page's Build tab), for someone without
+    /// scenery packages: built into the folder chosen, or a suggested one.
+    /// </summary>
+    public BuildSceneryViewModel Builder { get; }
 
-    public ICommand ShowDownloads { get; }
+    public ICommand ShowBuilder { get; }
 
-    public bool DownloadsShown
+    public bool BuilderShown
     {
-        get => _downloadsShown;
-        private set
-        {
-            if (Set(ref _downloadsShown, value)) Raise(nameof(PackagesMissing));
-        }
+        get => _builderShown;
+        private set => Set(ref _builderShown, value);
     }
 
-    private bool _downloadsShown;
+    private bool _builderShown;
 
     /// <summary>The packages folder chosen, when it can hold packages; otherwise the one the setup suggests.</summary>
-    private string DownloadFolder =>
+    private string BuildFolder =>
         _packages is not null && XPlaneOk && !SystemCheck.IsInCustomScenery(_packages, _xplane) ? _packages : SystemCheck.SuggestedPackagesFolder();
 
-    /// <summary>A region is installed: its folder becomes the packages folder, its card telling the packages now in it.</summary>
-    private void RegionInstalled(string folder)
+    /// <summary>Packages were built in a folder: it becomes the packages folder, its card telling the packages now in it.</summary>
+    private void UsePackagesFolder(string folder)
     {
         FolderOption? old = PackageOptions.FirstOrDefault(o => string.Equals(o.Path, folder, StringComparison.OrdinalIgnoreCase));
         if (old is not null) PackageOptions.Remove(old);
@@ -207,13 +215,6 @@ internal sealed class SetupViewModel : ObservableObject
     /// <summary>A folder was chosen and it has no packages (shown in red; before a choice the hint is just a hint).</summary>
     public bool PackagesWrong => _packages is not null && !PackagesOk;
 
-    /// <summary>
-    /// The folder chosen can be used but holds no packages: the download is offered right under the message, until the
-    /// list of regions is open.
-    /// </summary>
-    public bool PackagesMissing =>
-        !DownloadsShown && _packages is not null && XPlaneOk && !SystemCheck.IsInCustomScenery(_packages, _xplane) && SystemCheck.PackagesIn(_packages).Count == 0;
-
     public string PackagesHint
     {
         get
@@ -227,7 +228,7 @@ internal sealed class SetupViewModel : ObservableObject
             IReadOnlyList<string> found = SystemCheck.PackagesIn(_packages);
             if (found.Count == 0)
                 return "That folder has no scenery packages: none of its folders has an Earth nav data folder. " +
-                       "Choose the folder that holds your packages, not a package itself. No packages yet? Download a region below.";
+                       "Choose the folder that holds your packages, not a package itself. No packages yet? Build your own below.";
             IReadOnlyList<string> taken = SystemCheck.TakenInCustomScenery(_xplane, found);
             return taken.Count == 0
                 ? "OrthoStreamXP adds photos to these packages while it runs. They stay unchanged on disk."
@@ -332,9 +333,8 @@ internal sealed class SetupViewModel : ObservableObject
         Raise(nameof(PackagesOk));
         Raise(nameof(PackagesWrong));
         Raise(nameof(PackagesHint));
-        Raise(nameof(PackagesMissing));
         Raise(nameof(Summary));
-        Downloads.FolderChanged();
+        if (BuilderShown) Builder.OnShown();
         RelayCommand.Refresh();
     }
 
@@ -346,9 +346,8 @@ internal sealed class SetupViewModel : ObservableObject
         Raise(nameof(PackagesOk));
         Raise(nameof(PackagesWrong));
         Raise(nameof(PackagesHint));
-        Raise(nameof(PackagesMissing));
         Raise(nameof(Summary));
-        Downloads.FolderChanged();
+        if (BuilderShown) Builder.OnShown();
         RelayCommand.Refresh();
     }
 
