@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using System.Windows.Input;
 using OrthoStreamXP.Scenery;
 
@@ -13,20 +15,28 @@ internal sealed class SceneryViewModel : ObservableObject, IPage
 {
     private readonly MountController _mount;
     private readonly Func<string?> _xplane;
+    private readonly ICollectionView _shown;
     private string? _message;
+    private string _searchText = "";
+    private SceneryPackSearch _search = new(null);
 
     /// <param name="xplane">The X-Plane folder of the settings; null while there is none.</param>
     public SceneryViewModel(MountController mount, Func<string?> xplane)
     {
         _mount = mount;
         _xplane = xplane;
+        // The list on the page shows this view of Rows: the rows the search keeps, in the file's order.
+        _shown = CollectionViewSource.GetDefaultView(Rows);
+        _shown.Filter = row => _search.Matches(((SceneryPackRow)row).Entry);
         Refresh = new RelayCommand(Load);
         OpenFolder = new RelayCommand(() => Shell.Open(CustomScenery!), () => CustomScenery is { } folder && Directory.Exists(folder));
         _mount.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(MountController.State)) return;
             Raise(nameof(CanEdit));
+            Raise(nameof(CanDrag));
             Raise(nameof(RunningNote));
+            RaiseCount();
             RelayCommand.Refresh();
             if (_mount.IsRunning || _mount.IsStopped) Load();
         };
@@ -38,6 +48,52 @@ internal sealed class SceneryViewModel : ObservableObject, IPage
 
     /// <summary>The list can be changed only while OrthoStreamXP is stopped: starting and stopping change the file too.</summary>
     public bool CanEdit => _mount.IsStopped;
+
+    /// <summary>
+    /// Rows are dragged only while every row is shown: between two rows a search keeps, hundreds may be hidden, so where a
+    /// drop lands would be a guess.
+    /// </summary>
+    public bool CanDrag => CanEdit && _search.IsEmpty;
+
+    /// <summary>Part of a package's name or path; kept while the list is read again.</summary>
+    public string Search
+    {
+        get => _searchText;
+        set
+        {
+            if (!Set(ref _searchText, value ?? "")) return;
+            _search = new SceneryPackSearch(_searchText);
+            _shown.Refresh();
+            Raise(nameof(IsSearching));
+            Raise(nameof(CanDrag));
+            RaiseCount();
+        }
+    }
+
+    /// <summary>Whether the search hides some rows; then each row offers "Show in list".</summary>
+    public bool IsSearching => !_search.IsEmpty;
+
+    /// <summary>
+    /// Clears the search and highlights <paramref name="row"/>, so it can be found in the whole list and dragged to its new
+    /// place (the page scrolls to it).
+    /// </summary>
+    public void ShowInList(SceneryPackRow row)
+    {
+        foreach (SceneryPackRow other in Rows) other.IsHighlighted = false;
+        row.IsHighlighted = true;
+        Search = "";
+    }
+
+    /// <summary>How many packages the list has, and how many of them the search keeps.</summary>
+    public string? CountText => _search.CountText(Rows.Count(r => _search.Matches(r.Entry)), Rows.Count);
+
+    /// <summary>While searching: why the rows cannot be dragged, or that nothing matches.</summary>
+    public string? SearchNote =>
+        _search.IsEmpty || Rows.Count == 0 ? null
+        : Rows.Any(r => _search.Matches(r.Entry)) ? (CanEdit ? "Clear the search to drag packages into a new order." : null)
+        : $"No package matches \"{_searchText.Trim()}\".";
+
+    public bool HasSearchNote => SearchNote is not null;
 
     public string? RunningNote => CanEdit ? null : "OrthoStreamXP is running: stop it to change the list.";
 
@@ -67,7 +123,11 @@ internal sealed class SceneryViewModel : ObservableObject, IPage
         Message = null;
         Raise(nameof(FileText));
         RelayCommand.Refresh();
-        if (CustomScenery is not { } folder) return;
+        if (CustomScenery is not { } folder)
+        {
+            RaiseCount();
+            return;
+        }
         var list = new SceneryPackList(folder);
         try
         {
@@ -80,6 +140,17 @@ internal sealed class SceneryViewModel : ObservableObject, IPage
         {
             Message = $"Could not read {list.FilePath}: {ex.Message}";
         }
+        finally
+        {
+            RaiseCount();
+        }
+    }
+
+    private void RaiseCount()
+    {
+        Raise(nameof(CountText));
+        Raise(nameof(SearchNote));
+        Raise(nameof(HasSearchNote));
     }
 
     private bool Switch(SceneryPackRow row, bool enabled)
@@ -105,7 +176,7 @@ internal sealed class SceneryViewModel : ObservableObject, IPage
     public void Drop(SceneryPackRow row, int insertAt)
     {
         int from = Rows.IndexOf(row);
-        if (!CanEdit || CustomScenery is not { } folder || from < 0 || insertAt < 0 || insertAt > Rows.Count) return;
+        if (!CanDrag || CustomScenery is not { } folder || from < 0 || insertAt < 0 || insertAt > Rows.Count) return;
         int to = insertAt > from ? insertAt - 1 : insertAt;
         if (to == from) return;
         try

@@ -3,6 +3,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace OrthoStreamXP.Gui;
 
@@ -28,6 +29,31 @@ internal sealed partial class SceneryView
 
     private SceneryViewModel? Model => DataContext as SceneryViewModel;
 
+    /// <summary>
+    /// "Show in list" on a row the search kept: the search is cleared and the page scrolls so the row, now highlighted, sits in
+    /// the middle of the whole list, ready to be dragged.
+    /// </summary>
+    private void OnShowInList(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not SceneryPackRow row || Model is not { } model) return;
+        model.ShowInList(row);
+        // Once the list has laid out every row again.
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            if (List.ItemContainerGenerator.ContainerFromItem(row) is not FrameworkElement container) return;
+            double top = container.TranslatePoint(default, Scroller).Y;
+            Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + top - (Scroller.ActualHeight - container.ActualHeight) / 2);
+        });
+    }
+
+    /// <summary>Esc empties the search box, which shows every package again.</summary>
+    private void OnSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || SearchBox.Text.Length == 0) return;
+        SearchBox.Clear();
+        e.Handled = true;
+    }
+
     private void OnRowMouseDown(object sender, MouseButtonEventArgs e)
     {
         _pressed = IsOnButton(e.OriginalSource as DependencyObject) ? null : (sender as FrameworkElement)?.DataContext as SceneryPackRow;
@@ -37,7 +63,7 @@ internal sealed partial class SceneryView
 
     private void OnRowMouseMove(object sender, MouseEventArgs e)
     {
-        if (_pressed is not { } row || e.LeftButton != MouseButtonState.Pressed || Model is not { CanEdit: true }) return;
+        if (_pressed is not { } row || e.LeftButton != MouseButtonState.Pressed || Model is not { CanDrag: true }) return;
         Vector moved = e.GetPosition(this) - _pressedAt;
         if (Math.Abs(moved.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(moved.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         _pressed = null;
