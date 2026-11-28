@@ -19,6 +19,27 @@
             <TextBlock Style="{StaticResource PageIntro}"
                        Text="Switch X-Plane's scenery packages on or off, and drag them to change their order: a package higher in the list covers the ones below it. X-Plane reads the list when it starts, so a change shows from its next start. The packages OrthoStreamXP adds when you press Start are taken out again when you press Stop." />
             <TextBlock Style="{StaticResource Secondary}" Text="{Binding FileText}" Margin="0,0,0,12" TextWrapping="Wrap" />
+
+            <!-- Search (as on the Airports page), with how many packages it keeps; Esc clears it -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="360" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid>
+                    <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=250}" Padding="34,6,10,6"
+                             PreviewKeyDown="OnSearchKeyDown" AutomationProperties.Name="Search the scenery list" />
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="14" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Package name or folder" Margin="35,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource Visible}, ConverterParameter=Invert}" />
+                </Grid>
+                <TextBlock Grid.Column="1" Text="{Binding CountText}" Style="{StaticResource Secondary}" Margin="14,0,0,0"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Text="{Binding SearchNote}" Style="{StaticResource Caption}" Margin="2,0,0,8" TextWrapping="Wrap"
+                       Visibility="{Binding HasSearchNote, Converter={StaticResource Visible}}" />
             <TextBlock Text="{Binding RunningNote}" Style="{StaticResource Caption}" Margin="2,0,0,8"
                        Visibility="{Binding RunningNote, Converter={StaticResource Visible}}" />
             <TextBlock Text="{Binding Message}" Margin="2,0,0,8" TextWrapping="Wrap"
@@ -31,16 +52,29 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid Background="Transparent" PreviewMouseLeftButtonDown="OnRowMouseDown" PreviewMouseMove="OnRowMouseMove">
-                                <Border Style="{StaticResource RowCard}">
+                                <Border>
+                                    <!-- The package found with "Show in list": an accent border, as on a chosen card (1 px less padding: no shift) -->
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource RowCard}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                    <Setter Property="BorderThickness" Value="2" />
+                                                    <Setter Property="Padding" Value="15,11" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Style="{StaticResource Icon}" Text="&#xE76F;" FontSize="14" Margin="0,0,14,0" VerticalAlignment="Center"
                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" Cursor="SizeAll" ToolTip="Drag to change the order"
-                                                   Visibility="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource Visible}}" />
+                                                   Visibility="{Binding DataContext.CanDrag, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource Visible}}" />
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -51,7 +85,11 @@
                                             </StackPanel>
                                             <TextBlock Text="{Binding Path}" Style="{StaticResource Caption}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
-                                        <CheckBox Grid.Column="2" Style="{StaticResource Switch}" IsChecked="{Binding IsEnabled}" VerticalAlignment="Center"
+                                        <Button Grid.Column="2" Content="Show in list" Margin="0,0,16,0" VerticalAlignment="Center" Click="OnShowInList"
+                                                ToolTip="Clear the search and scroll to this package, to drag it to a new place"
+                                                AutomationProperties.Name="{Binding Name, StringFormat='Show {0} in the whole list'}"
+                                                Visibility="{Binding DataContext.IsSearching, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource Visible}}" />
+                                        <CheckBox Grid.Column="3" Style="{StaticResource Switch}" IsChecked="{Binding IsEnabled}" VerticalAlignment="Center"
                                                   IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                   AutomationProperties.Name="{Binding Name, StringFormat='Load {0} in X-Plane'}" />
                                     </Grid>
