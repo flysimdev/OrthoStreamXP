@@ -6,9 +6,10 @@
 
 - **Windows 10 or 11 (64-bit).**
 - **X-Plane 12.**
-- **Scenery packages** for the regions you fly: the terrain (the mesh) that OrthoStreamXP adds the photos to. Two ways to get them:
-    1. **Download a region in OrthoStreamXP**, during the setup or later on the **Packages** page (Europe, North America...). Nothing to prepare beforehand; see [Packages](packages.md).
-    2. **Use your own.** Packages made by Ortho4XP, OrthoStudio XP, AutoOrtho or XPME work. Each package is a folder that contains an `Earth nav data` folder. Put all of them in **one parent folder**, for example:
+- **Scenery packages** for the regions you fly: the terrain (the mesh) that OrthoStreamXP adds the photos to. Three ways to get them:
+    1. **Build your own in OrthoStreamXP** from X-Plane's Global Scenery, during the setup or later on the **Packages** page: pick the areas on a map, and each tile is built in a few seconds. See [Packages › Build own packages](packages.md#build-own-packages).
+    2. **Download a region in OrthoStreamXP** on the **Packages** page (Europe, North America...); see [Packages › Download kubilus1 packages](packages.md#download-kubilus1-packages).
+    3. **Use your own.** Packages made by Ortho4XP, OrthoStudio XP, AutoOrtho or XPME work. Each package is a folder that contains an `Earth nav data` folder. Put all of them in **one parent folder**, for example:
 
         ```
         D:\OrthoPackages\

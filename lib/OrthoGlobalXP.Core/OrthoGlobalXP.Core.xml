@@ -1,0 +1,1078 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>OrthoGlobalXP.Core</name>
+    </assembly>
+    <members>
+        <member name="T:OrthoGlobalXP.Airports.AirportData">
+            <summary>
+            Reads the land runways of X-Plane 12's airports from its Global Airports apt.dat (rows 1, the airport, and 100, a land
+            runway with both ends). Sea lanes and helipads are left out.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportData.PathOf(System.String)">
+            <summary>X-Plane's apt.dat: Global Scenery\Global Airports\Earth nav data\apt.dat.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportData.LoadRunwaysAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Every land runway of X-Plane's airports; empty when X-Plane has no apt.dat. Takes a few seconds (the file is large).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportData.ReadRunwaysAsync(System.IO.TextReader,System.Threading.CancellationToken)">
+            <summary>The land runways of an apt.dat's text.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportData.ParseRunway(System.String,System.String)">
+            <summary>
+            100 width surface shoulder smoothness centre-lights edge-lights signs, then for each end: number lat lon displaced
+            overrun markings approach-lights touchdown-lights REIL.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.ZoomRule">
+            <summary>Photos of <paramref name="Zoom"/> on every texture that comes within <paramref name="RadiusKm"/> of a runway.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.ZoomRule.#ctor(System.Int32,System.Double)">
+            <summary>Photos of <paramref name="Zoom"/> on every texture that comes within <paramref name="RadiusKm"/> of a runway.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.AirportZoomOptions">
+            <summary>
+            Finer photos near airports: each texture within a rule's distance of any land runway (grass strips too)
+            is split into four of the next zoom, and so on up to the rule's zoom. Only the rules' zooms get textures: with one rule of
+            ZL18, ROW_COL_BI18 lie next to ROW_COL_BI16 and the parts of a split texture beyond the distance keep its ZL16 photo.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Airports.AirportZoomOptions.Default">
+            <summary>17 within 4 km and 18 within 1.5 km of a runway.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportZoomOptions.Validate(System.Int32)">
+            <summary>Throws when a rule's zoom is not above <paramref name="baseZoom"/> (up to 19) or its distance is not 0 to 50 km.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportZoomOptions.ToString">
+            <summary>The rules for the log: "ZL17 within 4 km, ZL18 within 1.5 km of a runway".</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.FinerTexture">
+            <summary>A photo texture finer than the package's zoom, by its edges.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.FinerTexture.#ctor(System.Double,System.Double,System.Double,System.Double,System.Int32)">
+            <summary>A photo texture finer than the package's zoom, by its edges.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.AirportZoomPreview">
+            <summary>The textures finer photos near airports would give each tile, the same as a build makes them; for the map.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.AirportZoomPreview.#ctor(System.Collections.Generic.IEnumerable{OrthoGlobalXP.Airports.Runway},OrthoGlobalXP.Airports.AirportZoomOptions,System.Int32)">
+            <param name="baseZoom">The package's zoom, away from airports.</param>
+        </member>
+        <member name="P:OrthoGlobalXP.Airports.AirportZoomPreview.BaseZoom">
+            <summary>The package's zoom, away from airports.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.Runway">
+            <summary>A land runway from X-Plane's apt.dat: its two ends (thresholds) and the airport it belongs to.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.Runway.#ctor(System.String,System.Double,System.Double,System.Double,System.Double)">
+            <summary>A land runway from X-Plane's apt.dat: its two ends (thresholds) and the airport it belongs to.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Airports.Runway.LengthM">
+            <summary>The distance between the two ends, in metres.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.Runway.DistanceTo(System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            The distance in metres from the runway (a segment between its ends) to the box <paramref name="west"/> ..
+            <paramref name="east"/>, <paramref name="south"/> .. <paramref name="north"/>; 0 when they touch. Measured on a plane
+            tangent at the runway, which is close enough within tens of kilometres.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Airports.Runway.MetresPerDegree">
+            <summary>Metres per degree of latitude (and of longitude at the equator), on a sphere of the mean radius.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.Runway.SegmentMeetsBox(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)">
+            <summary>Liang–Barsky: whether any part of the segment lies in the box.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Airports.RunwayZoom">
+            <summary>
+            The zoom each texture should have by its distance to the nearest runway. It depends only on the texture and the runways,
+            never on the tile asking, so neighbouring tiles agree on the textures across their border and the meshes meet.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.RunwayZoom.ZoomOf(OrthoGlobalXP.Imagery.TextureCell)">
+            <summary>The finest rule's zoom whose distance reaches the texture, or the texture's own zoom when none does.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.RunwayZoom.RuleZoomOf(OrthoGlobalXP.Imagery.TextureCell)">
+            <summary>
+            The finest rule's zoom whose distance reaches the texture, or 0 when none does (whatever the texture's own zoom). A
+            texture is never nearer a runway than the texture it is a quarter of, so it never asks for more than that one.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Airports.RunwayZoom.Near(System.Double,System.Double,System.Double,System.Double)">
+            <summary>The runways whose 1° tiles lie within the largest distance of the box.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.PackageBuilder">
+            <summary>
+            Builds photo-terrain packages from X-Plane's Global Scenery: each tile's DSF is read, re-textured and written to
+            <c>Earth nav data</c> in its continent's package (<see cref="M:OrthoGlobalXP.Building.PackageOptions.PackageFolderOf(OrthoGlobalXP.Regions.Continent)"/>), and its roads, forests and
+            buildings to the same place in the overlay package (<see cref="P:OrthoGlobalXP.Building.PackageOptions.OverlayPackageFolder"/>), several tiles at
+            once. A tile that fails is reported and the others go on.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageBuilder.#ctor(OrthoGlobalXP.Scenery.GlobalScenery,OrthoGlobalXP.Building.PackageOptions,System.Collections.Generic.IReadOnlyList{OrthoGlobalXP.Airports.Runway})">
+            <param name="runways">
+            X-Plane's runways, when already read (<see cref="M:OrthoGlobalXP.Airports.AirportData.LoadRunwaysAsync(System.String,System.Threading.CancellationToken)"/>); otherwise they are read when the
+            options ask for finer photos near airports.
+            </param>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageBuilder.BuildAsync(System.Collections.Generic.IReadOnlyCollection{OrthoGlobalXP.Geo.TileCoordinate},System.IProgress{OrthoGlobalXP.Building.TileProgress},System.Threading.CancellationToken)">
+            <summary>Builds the tiles; cancelling stops the tiles under way and keeps the ones finished.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageBuilder.RemoveFromOtherContinents(OrthoGlobalXP.Geo.TileCoordinate,OrthoGlobalXP.Regions.Continent)">
+            <summary>
+            Deletes the tile's DSF from the other continents' packages, where one made with another split of the continents
+            would leave it: X-Plane would load the tile's mesh twice.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageBuilder.RunwayZoomAsync(System.Threading.CancellationToken)">
+            <summary>The runways the rules near airports apply to, or null when there are no rules.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.PackageManifest">
+            <summary>
+            <c>orthoglobalxp.json</c> in the package: for each tile, the Global Scenery file and settings it was made from, so a later
+            build skips the tiles that are current and redoes those X-Plane's updates or changed settings made stale.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageManifest.BuilderVersion">
+            <summary>
+            Raised when the way a tile is made changes, so every tile made before is made again. 2: the roads, forests and
+            buildings moved from the photo DSF to the overlay package. (A change of the textures near runways needs no new version:
+            the layout's fingerprint, recorded with each tile, changes for exactly the tiles it touches.)
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageManifest.LoadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>The manifest of a package folder; empty when there is none yet or it cannot be read (every tile is then built).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageManifest.Save">
+            <summary>Writes the manifest through a temporary file. Called after each tile, so a stopped build keeps what it made.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.TileRecord">
+            <summary>
+            What a tile was made from: the Global Scenery file's size and time, and the settings. <see cref="P:OrthoGlobalXP.Building.TileRecord.Zooms"/> fingerprints
+            the finer textures near airports (null when the tile has none), so only the tiles they change are built again.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.TileRecord.#ctor(System.Int64,System.DateTime,System.String,System.Int32,System.Boolean,System.Boolean,System.Int32,System.String)">
+            <summary>
+            What a tile was made from: the Global Scenery file's size and time, and the settings. <see cref="P:OrthoGlobalXP.Building.TileRecord.Zooms"/> fingerprints
+            the finer textures near airports (null when the tile has none), so only the tiles they change are built again.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.PackageOptions">
+            <summary>
+            Where the packages go and how their tiles are made. The tiles are split by continent, as OrthoStreamXP's own packages
+            are: <c>OrthoGlobal_Europe_XP</c>, <c>OrthoGlobal_NorthAmerica_XP</c>, <c>OrthoGlobal_SouthAmerica_XP</c>,
+            <c>OrthoGlobal_Africa_XP</c>, <c>OrthoGlobal_Asia_XP</c> and <c>OrthoGlobal_AustraliaPacific_XP</c> (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>),
+            and their roads, forests and buildings all go to <c>OrthoGlobal_Overlays_XP</c>, beside them in <see cref="P:OrthoGlobalXP.Building.PackageOptions.OutputFolder"/>.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageOptions.OverlaySuffix">
+            <summary>
+            Added to the prefix for the overlay package (OrthoGlobal_Overlays_XP). OrthoStreamXP takes a package whose name says
+            overlays for one: it lists it above the photo packages, and reads its roads to light the towns at night.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageOptions.NameEnd">
+            <summary>Ends every package's name (OrthoGlobal_Europe_XP): made from X-Plane's own scenery.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageOptions.OrthoStreamXPPrefix">
+            <summary>
+            The start of the names OrthoStreamXP gives the packages it downloads and manages itself (OrthoStream_Eur,
+            OrthoStream_Overlays): it would take ours for its own, so the prefix may not make them.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.OutputFolder">
+            <summary>The folder the packages are made in, such as OrthoStreamXP's packages folder (base-packages).</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.PackagePrefix">
+            <summary>The start of the packages' names: each is the prefix, '_', its continent and <see cref="F:OrthoGlobalXP.Building.PackageOptions.NameEnd"/> (OrthoGlobal_Europe_XP).</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.AirportZoom">
+            <summary>Finer photos near airports, or null for the same zoom everywhere.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.KeepOverlays">
+            <summary>
+            Keep X-Plane's roads, forests, buildings and objects: they are written to the overlay package
+            (<see cref="P:OrthoGlobalXP.Building.PackageOptions.OverlayPackageFolder"/>), whose roads OrthoStreamXP also lights at night. Turn off when an overlay package
+            that brings them is installed too (such as AutoOrtho's OrthoStream_Overlays), or they are drawn twice.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.PackDsf">
+            <summary>
+            Store the photo package's DSFs as 7z archives, as Laminar does: under half the size, and X-Plane reads them as they
+            are. The overlay package's stay plain, since OrthoStreamXP reads only plain DSFs for the roads it lights at night.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.WriteTerrainFiles">
+            <summary>
+            Also write each texture's .ter file into the package's terrain folder. OrthoStreamXP makes them itself from the names,
+            so they are needed only to use the package another way.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.Rebuild">
+            <summary>Build every tile again, even those whose DSF is newer than X-Plane's and was made with the same settings.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.Workers">
+            <summary>The tiles built at once: <see cref="P:OrthoGlobalXP.Building.PackageOptions.AutoWorkers"/> unless chosen.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.PackageOptions.BytesPerWorker">
+            <summary>
+            The most a tile takes while it is built: Tokyo (+35+139), the largest Global Scenery DSF, peaks near 1 GB; most
+            heavy tiles 0.5 to 0.7 GB.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.AutoWorkers">
+            <summary>The tiles this computer builds at once: <see cref="M:OrthoGlobalXP.Building.PackageOptions.WorkersFor(System.Int32,System.Int64)"/> its processors and memory.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageOptions.WorkersFor(System.Int32,System.Int64)">
+            <summary>
+            One tile per logical processor but one, which is left for the window (hyper-threads still speed the build up), and no
+            more than half the memory holds at <see cref="F:OrthoGlobalXP.Building.PackageOptions.BytesPerWorker"/> each, so the computer and X-Plane keep the rest.
+            Memory that is not known (0) does not limit it.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageOptions.PackageNameOf(OrthoGlobalXP.Regions.Continent)">
+            <summary>The photo package of a continent's tiles: OrthoGlobal_Europe_XP.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Building.PackageOptions.OverlayPackageName">
+            <summary>The one package of every continent's roads, forests and buildings, beside the photo packages: OrthoGlobal_Overlays_XP.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.PackageTiles">
+            <summary>The tiles packages already have a DSF for.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageTiles.Find(OrthoGlobalXP.Building.PackageOptions)">
+            <summary>The tiles of every continent's photo package made with these options' folder and prefix.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.PackageTiles.Find(System.String)">
+            <summary>The tiles of one package folder.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.TerrainFileWriter">
+            <summary>
+            Writes a photo texture's terrain definition (terrain/ROW_COL_BI16.ter), the same as OrthoStreamXP makes from the name:
+            the texture loaded by distance from its centre, X-Plane's standard detail decals, no alpha.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.TerrainFileWriter.#ctor(OrthoGlobalXP.Imagery.TextureGrid)">
+            <summary>
+            Writes a photo texture's terrain definition (terrain/ROW_COL_BI16.ter), the same as OrthoStreamXP makes from the name:
+            the texture loaded by distance from its centre, X-Plane's standard detail decals, no alpha.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.TerrainFileWriter.Write(System.String,System.Collections.Generic.IEnumerable{OrthoGlobalXP.Imagery.TextureCell})">
+            <summary>Writes the definitions not in the package yet.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.TileListParser">
+            <summary>
+            Reads typed tile lists: names (<c>+50+014 +50+015</c>) and rectangles given by two opposite corners
+            (<c>+49+012 .. +51+016</c>), separated by spaces, commas, semicolons or line breaks.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.TileListParser.RangePattern">
+            <remarks>
+            Pattern:<br/>
+            <code>\\s*\\.\\.\\s*</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a whitespace character atomically any number of times.<br/>
+            ○ Match the string "..".<br/>
+            ○ Match a whitespace character atomically any number of times.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.TileState.UpToDate">
+            <summary>The package's DSF was made from the same Global Scenery file with the same settings.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Building.TileState.NoSource">
+            <summary>X-Plane has no Global Scenery DSF for the tile (open ocean).</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.TileProgress">
+            <summary>A tile's state during a build; <see cref="P:OrthoGlobalXP.Building.TileProgress.Stats"/> once it is built.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.TileProgress.#ctor(OrthoGlobalXP.Geo.TileCoordinate,OrthoGlobalXP.Building.TileState,System.String,OrthoGlobalXP.Retexture.RetextureStats,System.TimeSpan)">
+            <summary>A tile's state during a build; <see cref="P:OrthoGlobalXP.Building.TileProgress.Stats"/> once it is built.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Building.BuildSummary">
+            <summary>How a build ended.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Building.BuildSummary.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.TimeSpan)">
+            <summary>How a build ended.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.CommandScan">
+            <summary>
+            One pass over a CMDS payload: the terrain patches with their triangles (strips and fans unrolled), the 16-bit point
+            pools that objects and polygons place things from, and how many network chains there are.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.CommandScan.PoolsUsedByOtherCommands">
+            <summary>The 16-bit pools selected when an object or polygon command used one.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.CommandScan.NetworkChains">
+            <summary>How many network chains (roads, railways, power lines) the commands draw.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.CommandScan.Run(System.Byte[],System.Func{System.Int32,System.Byte,OrthoGlobalXP.Dsf.PatchRole})">
+            <summary>Walks the commands; <paramref name="roleOf"/> decides each patch's role from its definition and flags.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.CommandScan.Points(System.Byte,System.ReadOnlySpan{System.Byte},System.Int32)">
+            <summary>The points a triangle command lists: from the selected pool, cross-pool pairs, or a range of the selected pool.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.CommandWriter">
+            <summary>Builds a CMDS payload: commands copied as they are, and terrain patches written anew.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Dsf.CommandWriter.PointsPerCommand">
+            <summary>The most points one triangle command lists (a whole number of triangles).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.CommandWriter.Triangles(System.Collections.Generic.IReadOnlyList{System.Int32})">
+            <summary>Triangles whose corners are all in the selected pool, by point index.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.CommandWriter.TrianglesCrossPool(System.Collections.Generic.IReadOnlyList{OrthoGlobalXP.Dsf.PoolRef})">
+            <summary>Triangles whose corners are in several pools of the same depth.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.CommandWriter.Patch(System.Int32,System.Byte,System.Single,System.Single,System.Collections.Generic.IReadOnlyList{OrthoGlobalXP.Dsf.PoolRef})">
+            <summary>
+            A whole terrain patch: its triangles grouped by pool (one patch per pool, the pool selected before it, as X-Plane
+            expects) and the triangles spanning pools in one cross-pool patch.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.DsfAtom">
+            <summary>One atom of a DSF: a leaf holding a payload, or a container (HEAD, DEFN, GEOD, DEMS) holding atoms.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.DsfAtom.Id">
+            <summary>The four-letter name in reading order (HEAD; the file stores it reversed).</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.DsfAtom.Payload">
+            <summary>A leaf's bytes; null for a container. Replaceable, so a rewrite keeps the atom's place.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.DsfAtom.Children">
+            <summary>A container's atoms; null for a leaf.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.DsfAtom.Size">
+            <summary>The atom's size in the file, header included.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfAtom.RequirePayload">
+            <summary>A leaf's payload, or a format error naming the atom when it is a container.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.DsfCommands">
+            <summary>The opcodes of a DSF's command stream (CMDS) and the length of each command.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Dsf.DsfCommands.FlagPhysical">
+            <summary>Patch flag: the terrain is solid (collisions, physics); without it the patch is an overlay drawn on top.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfCommands.IsTerrain(System.Byte)">
+            <summary>Whether the command begins a terrain patch or lists its triangles.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfCommands.UsesPointPool16(System.Byte)">
+            <summary>
+            Whether the command places something from the selected 16-bit point pool (POOL): objects and polygons. Network
+            chains select their points from the 32-bit pools (PO32), which are numbered on their own.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfCommands.Length(System.ReadOnlySpan{System.Byte},System.Int32)">
+            <summary>The length in bytes of the command at <paramref name="pos"/>, its opcode included.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfCommands.NestedPolygonLength(System.ReadOnlySpan{System.Byte},System.Int32)">
+            <summary>Parameter, polygon count, then each polygon's point count and points.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.DsfDocument">
+            <summary>
+            The atom tree of a DSF file: the <c>XPLNEDSF</c> header and version 1, the top-level atoms, and the MD5 footer
+            over everything before it. Atoms not changed are written back byte for byte.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfDocument.HasDsfHeader(System.ReadOnlySpan{System.Byte})">
+            <summary>Whether the bytes start like a plain (not 7z-packed) DSF.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfDocument.Find(System.String)">
+            <summary>The atom at a path such as <c>DEFN/TERT</c>, or null.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.DsfDocument.Require(System.String)">
+            <summary>The atom at <paramref name="path"/>, or a format error naming it.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.DsfFormatException">
+            <summary>A DSF file that does not follow the format, or uses a part of it this program does not read.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.DsfStrings">
+            <summary>The string tables of a DSF (TERT, OBJT, POLY, NETW, DEMN, PROP): NUL-terminated UTF-8 strings.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.PointPool">
+            <summary>
+            A 16-bit point pool (POOL atom): <see cref="P:OrthoGlobalXP.Dsf.PointPool.Count"/> points of <see cref="P:OrthoGlobalXP.Dsf.PointPool.Planes"/> raw values each. In the file each
+            plane is stored on its own, raw, differenced, run-length coded or both; here the values are point by point.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.PointPool.Values">
+            <summary>Point-major: point i's plane p is at <c>i * Planes + p</c>.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.PointPool.PlanesOf(System.ReadOnlySpan{System.Byte})">
+            <summary>The plane count of a POOL payload, read from its header alone.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.PointPool.Encode">
+            <summary>The POOL payload, every plane differenced (no run-length coding; packing the DSF does the rest).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.PointPool.Placeholder(System.Int32)">
+            <summary>A one-point pool standing in for one no command uses any more, so the indices of the others stay.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.PoolRef">
+            <summary>A point of a 16-bit pool: the pool's index in the file and the point's index in the pool.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.PoolRef.#ctor(System.Int32,System.Int32)">
+            <summary>A point of a 16-bit pool: the pool's index in the file and the point's index in the pool.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.PoolScale">
+            <summary>A SCAL atom: a (scale, offset) pair per plane of its pool; value = offset + raw * scale / 65535.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.PatchRole">
+            <summary>What becomes of a terrain patch of X-Plane's scenery.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Dsf.PatchRole.Land">
+            <summary>Solid land: its triangles are re-textured with photos.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Dsf.PatchRole.Water">
+            <summary><c>terrain_Water</c>: kept as it is.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Dsf.PatchRole.Blend">
+            <summary>An overlay blending one land class into the next: left out, it would paint over the photos.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Dsf.TerrainPatch">
+            <summary>One terrain patch: its definition, flags, LOD range and, unless it is left out, the corners of its triangles.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Dsf.TerrainPatch.#ctor(System.Int32,System.Byte,System.Single,System.Single,OrthoGlobalXP.Dsf.PatchRole)">
+            <summary>One terrain patch: its definition, flags, LOD range and, unless it is left out, the corners of its triangles.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Dsf.TerrainPatch.Corners">
+            <summary>Three per triangle, in X-Plane's winding. Empty for a <see cref="F:OrthoGlobalXP.Dsf.PatchRole.Blend"/> patch.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Geo.TileCoordinate">
+            <summary>One 1° x 1° X-Plane tile, named after its south-west corner: +50+014 is 50°N 14°E.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Geo.TileCoordinate.Lat">
+            <summary>Latitude of the south edge.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Geo.TileCoordinate.Lon">
+            <summary>Longitude of the west edge.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Geo.TileCoordinate.Name">
+            <summary>The DSF name without extension: +50+014, -34-059.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Geo.TileCoordinate.FolderName">
+            <summary>The 10° folder of Earth nav data the tile's DSF is in: +50+010, -40-060.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Geo.TileCoordinate.TryParse(System.String,OrthoGlobalXP.Geo.TileCoordinate@)">
+            <summary>Reads a tile name such as +50+014 (surrounding spaces allowed).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Geo.TileCoordinate.NamePattern">
+            <remarks>
+            Pattern:<br/>
+            <code>^\\s*([+-]\\d{2})([+-]\\d{3})\\s*$</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match if at the beginning of the string.<br/>
+            ○ Match a whitespace character atomically any number of times.<br/>
+            ○ 1st capture group.<br/>
+                ○ Match a character in the set [+\-].<br/>
+                ○ Match a Unicode digit exactly 2 times.<br/>
+            ○ 2nd capture group.<br/>
+                ○ Match a character in the set [+\-].<br/>
+                ○ Match a Unicode digit exactly 3 times.<br/>
+            ○ Match a whitespace character greedily any number of times.<br/>
+            ○ Match if at the end of the string or if before an ending newline.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:OrthoGlobalXP.Geo.WebMercator">
+            <summary>
+            The slippy-map tile grid of the imagery providers (Web Mercator): fractional tile coordinates at a zoom level,
+            x growing east from 180°W, y growing south from the top of the map.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Imagery.ImageryOptions">
+            <summary>
+            Which photo textures the terrain names: <c>ROW_COL_{ProviderCode}{Zoom}.dds</c>, each covering 16 x 16 imagery tiles
+            of <see cref="P:OrthoGlobalXP.Imagery.ImageryOptions.Zoom"/> (the Ortho4XP / AutoOrtho layout OrthoStreamXP serves).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.ImageryOptions.#ctor(System.String,System.Int32)">
+            <summary>
+            Which photo textures the terrain names: <c>ROW_COL_{ProviderCode}{Zoom}.dds</c>, each covering 16 x 16 imagery tiles
+            of <see cref="P:OrthoGlobalXP.Imagery.ImageryOptions.Zoom"/> (the Ortho4XP / AutoOrtho layout OrthoStreamXP serves).
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.ImageryOptions.Default">
+            <summary>Bing at zoom 16, the layout of AutoOrtho's meshes.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.ImageryOptions.Validate">
+            <summary>Throws when the code is not 1 to 8 letters or digits, or the zoom is outside 12..19.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.ImageryOptions.CodePattern">
+            <remarks>
+            Pattern:<br/>
+            <code>^[A-Za-z][A-Za-z0-9]{0,7}$</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match if at the beginning of the string.<br/>
+            ○ Match an ASCII letter.<br/>
+            ○ Match an ASCII letter or digit atomically at most 7 times.<br/>
+            ○ Match if at the end of the string or if before an ending newline.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:OrthoGlobalXP.Imagery.TextureCell">
+            <summary>
+            One photo texture: the imagery tile at its top-left corner (both multiples of 16) at its zoom level. A texture of the next
+            zoom covers a quarter of it, and its edges include all of this one's, so textures of several zooms nest without gaps.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureCell.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            One photo texture: the imagery tile at its top-left corner (both multiples of 16) at its zoom level. A texture of the next
+            zoom covers a quarter of it, and its edges include all of this one's, so textures of several zooms nest without gaps.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.TextureCell.MiddleLon">
+            <summary>The longitude between its two western and two eastern quarters: an edge of the next zoom's textures.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.TextureCell.MiddleLat">
+            <summary>The latitude between its two northern and two southern quarters.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureCell.Quarters">
+            <summary>The four textures of the next zoom that cover it.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Imagery.TextureGrid">
+            <summary>
+            The grid of photo textures of one zoom level: each texture covers 16 x 16 imagery tiles, so its edges are lines of
+            constant longitude and constant latitude, and the mesh can be cut along them exactly. Textures of finer zooms (near
+            airports) are named and mapped by the zoom their <see cref="T:OrthoGlobalXP.Imagery.TextureCell"/> carries.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Imagery.TextureGrid.Span">
+            <summary>Imagery tiles along each side of one texture.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.TextureGrid.Zoom">
+            <summary>The zoom of the grid's textures, those away from airports.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.LongitudeLines(System.Double,System.Double)">
+            <summary>The longitudes of the texture edges strictly between <paramref name="west"/> and <paramref name="east"/>, west to east.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.LatitudeLines(System.Double,System.Double)">
+            <summary>The latitudes of the texture edges strictly between <paramref name="south"/> and <paramref name="north"/>, north to south.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.CellAt(System.Double,System.Double)">
+            <summary>The texture of the grid's zoom covering a point.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.CellAt(System.Double,System.Double,System.Int32)">
+            <summary>The texture of <paramref name="zoom"/> covering a point.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.Uv(OrthoGlobalXP.Imagery.TextureCell,System.Double,System.Double)">
+            <summary>
+            A point's texture coordinates in <paramref name="cell"/>: s from 0 at the west edge to 1 at the east edge, t from 1 at
+            the north edge to 0 at the south edge (Ortho4XP's <c>st_coord</c>), clamped to [0, 1].
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.Stem(OrthoGlobalXP.Imagery.TextureCell)">
+            <summary>The texture's stem: 11952_36192_BI16 (the zoom is the texture's own).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.TerrainPath(OrthoGlobalXP.Imagery.TextureCell)">
+            <summary>The terrain definition the DSF names for a texture: terrain/11952_36192_BI16.ter.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureGrid.Center(OrthoGlobalXP.Imagery.TextureCell)">
+            <summary>The centre of a texture and its width on the ground, for LOAD_CENTER.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Imagery.TextureLayout">
+            <summary>
+            The photo textures of one tile: the grid's, with those near runways split into four of the next zoom, again and again up
+            to the zoom the runways ask for. The splits form a quadtree, so every finer texture edge continues a coarser one.
+            A quarter left over by a split (one no rule asks to be that fine) keeps the coarser texture its rule asks for (else the
+            grid's), covering only its part of it: ZL16 with ZL18 near runways gives ZL16 and ZL18 textures, never a ZL17 one.
+            </summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Imagery.TextureLayout._coarser">
+            <summary>The quarters left over by a split, each with the coarser texture it shows (a split cell above it).</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.TextureLayout.SplitCells">
+            <summary>The textures split into four finer ones, coarsest first.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Imagery.TextureLayout.Fingerprint">
+            <summary>
+            A short hash of the split textures, or null when there are none: recorded with the tile, so it is built again when
+            the airports or the rules near them change (and only then).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureLayout.FinerCells">
+            <summary>
+            The textures finer than the grid's that the tile has: the quarters not split again, overlapping the tile, or the
+            coarser texture a left-over quarter shows when that is still finer than the grid's (each once).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureLayout.CellAt(System.Double,System.Double)">
+            <summary>The texture covering a point: the grid's, the finest quarter it was split into, or the one that quarter shows.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureLayout.Cut(OrthoGlobalXP.Mesh.TriangleMesh)">
+            <summary>
+            Cuts the mesh along every texture edge: the grid's lines across the whole tile, then, zoom by zoom, the middles of the
+            split textures inside them only.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Imagery.TextureLayout.AncestorOf(OrthoGlobalXP.Imagery.TextureCell,System.Int32)">
+            <summary>The texture of <paramref name="zoom"/> that <paramref name="cell"/> is part of.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.GridAxis">
+            <summary>Which coordinate a cut line holds constant.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.PartialLine">
+            <summary>
+            A line cut only where it crosses the given spans of the other coordinate (the latitudes of a longitude line), such as
+            the middle of a texture split into four finer ones. <see cref="P:OrthoGlobalXP.Mesh.PartialLine.Spans"/> must follow lines already cut, so that every
+            triangle lies wholly inside or outside each span.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.PartialLine.#ctor(OrthoGlobalXP.Mesh.GridAxis,System.Double,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Double,System.Double}})">
+            <summary>
+            A line cut only where it crosses the given spans of the other coordinate (the latitudes of a longitude line), such as
+            the middle of a texture split into four finer ones. <see cref="P:OrthoGlobalXP.Mesh.PartialLine.Spans"/> must follow lines already cut, so that every
+            triangle lies wholly inside or outside each span.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.GridSplitter">
+            <summary>
+            Cuts a mesh along lines of constant longitude and latitude (the photo texture edges), so that no triangle crosses one.
+            Each line is applied to the whole mesh in turn, and an edge is cut once per line however many triangles share it, so the
+            mesh stays watertight: no cracks and no T-junctions. Windings are kept.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.GridSplitter.Split(OrthoGlobalXP.Mesh.TriangleMesh,System.Collections.Generic.IEnumerable{OrthoGlobalXP.Mesh.PartialLine})">
+            <summary>
+            Cuts the triangles inside each line's spans. A triangle outside them that shares a cut edge (on the border of a span)
+            is split at the new vertex too, without being cut along the line, so no T-junction is left.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.GridSplitter.LineCut">
+            <summary>One line's pass over the mesh, with the vertices it made on each cut edge.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.GridSplitter.LineCut.#ctor(OrthoGlobalXP.Mesh.TriangleMesh,OrthoGlobalXP.Mesh.GridAxis,System.Double,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Double,System.Double}})">
+            <summary>One line's pass over the mesh, with the vertices it made on each cut edge.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.GridSplitter.LineCut.InSpans(System.Int32,System.Int32,System.Int32)">
+            <summary>Whether the triangle's centre lies in one of the spans: it lies wholly in or out, by the lines cut before.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.GridSplitter.LineCut.Fit(System.Int32,System.Int32,System.Int32)">
+            <summary>Splits a triangle outside the spans at the vertices its neighbours inside made on its edges, if any.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.GridSplitter.LineCut.Between(System.Int32,System.Int32)">
+            <summary>The vertex where the edge crosses the line, made once per edge. It lies exactly on the line.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.MeshVertex">
+            <summary>
+            A vertex of X-Plane's base mesh: position, elevation and the two stored normal components. An elevation of
+            <see cref="F:OrthoGlobalXP.Mesh.MeshVertex.SampledElevation"/> tells X-Plane to take it from the tile's elevation raster, as most Global Scenery vertices do.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.MeshVertex.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            A vertex of X-Plane's base mesh: position, elevation and the two stored normal components. An elevation of
+            <see cref="F:OrthoGlobalXP.Mesh.MeshVertex.SampledElevation"/> tells X-Plane to take it from the tile's elevation raster, as most Global Scenery vertices do.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.MeshVertex.Between(OrthoGlobalXP.Mesh.MeshVertex,OrthoGlobalXP.Mesh.MeshVertex,System.Double)">
+            <summary>
+            The point a fraction <paramref name="t"/> of the way from <paramref name="a"/> to <paramref name="b"/>. Its elevation is
+            sampled from the raster when either end's is; otherwise it is interpolated like the position and the normal.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.MeshWelder">
+            <summary>
+            Turns the triangles of the land patches into one connected mesh. X-Plane stores a vertex once per pool, so the two sides of
+            a pool border hold copies of the same point; they are merged by position (to about a centimetre), so cutting a shared edge
+            later gives both sides the same new vertex.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.MeshWelder.#ctor(System.Func{OrthoGlobalXP.Dsf.PoolRef,OrthoGlobalXP.Mesh.MeshVertex})">
+            <summary>
+            Turns the triangles of the land patches into one connected mesh. X-Plane stores a vertex once per pool, so the two sides of
+            a pool border hold copies of the same point; they are merged by position (to about a centimetre), so cutting a shared edge
+            later gives both sides the same new vertex.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Mesh.MeshWelder.Collapsed">
+            <summary>Triangles that became a line or a point once their copies were merged, and were left out.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Mesh.TriangleMesh">
+            <summary>An indexed triangle mesh: shared vertices and three vertex indices per triangle, in X-Plane's winding.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.TriangleMesh.SignedArea(System.Int32)">
+            <summary>The triangle's area in square degrees, positive when its corners run counter-clockwise (east, then north).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Mesh.TriangleMesh.Centroid(System.Int32)">
+            <summary>The point inside the triangle where its medians meet.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.City">
+            <summary>
+            A city for the map: its name in English, where it is, and <see cref="P:OrthoGlobalXP.Regions.City.MinZoom"/>, the web-map zoom from which Natural
+            Earth names it (1.7 for the world's largest, 10 for small towns).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Regions.City.#ctor(System.String,System.String,System.Double,System.Double,System.Int32,System.Double,System.Boolean)">
+            <summary>
+            A city for the map: its name in English, where it is, and <see cref="P:OrthoGlobalXP.Regions.City.MinZoom"/>, the web-map zoom from which Natural
+            Earth names it (1.7 for the world's largest, 10 for small towns).
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.CityCatalog">
+            <summary>The cities the map names, from Natural Earth's public-domain populated places (<c>tools/make_cities.py</c>).</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Regions.CityCatalog.All">
+            <summary>Every city, most important first (by <see cref="P:OrthoGlobalXP.Regions.City.MinZoom"/>, then population).</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.Continent">
+            <summary>
+            One of the six continents the photo packages are split by, as OrthoStreamXP splits the meshes it downloads
+            (OrthoStream_Eur, OrthoStream_NA...): <see cref="P:OrthoGlobalXP.Regions.Continent.Id"/> is OrthoStreamXP's id for it and <see cref="P:OrthoGlobalXP.Regions.Continent.Suffix"/> ends the
+            names of those downloaded packages. Ours are named by <see cref="P:OrthoGlobalXP.Regions.Continent.NameInPackages"/> instead (OrthoGlobal_Europe_XP), so
+            the two are told apart at a glance. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Regions.Continent.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>
+            One of the six continents the photo packages are split by, as OrthoStreamXP splits the meshes it downloads
+            (OrthoStream_Eur, OrthoStream_NA...): <see cref="P:OrthoGlobalXP.Regions.Continent.Id"/> is OrthoStreamXP's id for it and <see cref="P:OrthoGlobalXP.Regions.Continent.Suffix"/> ends the
+            names of those downloaded packages. Ours are named by <see cref="P:OrthoGlobalXP.Regions.Continent.NameInPackages"/> instead (OrthoGlobal_Europe_XP), so
+            the two are told apart at a glance. Every tile is in exactly one (<see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/>), so no tile's mesh is in two packages.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Regions.Continent.All">
+            <summary>The six, in the order a tile on a border is given to the first of those with as many tiles around it.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)">
+            <summary>
+            The continent a tile's package is: the Natural Earth continent the tile is in (<see cref="T:OrthoGlobalXP.Regions.RegionCatalog"/>), with
+            Russia east of the Urals (60°E) in Asia. A tile on a border goes to the one of its continents with the most tiles
+            around it; a tile in none (sea, Antarctica, a remote island) to the continent with the most tiles in the smallest
+            square around it that has any. The answer depends only on the tile, so it is the same in every build.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.ContinentMap">
+            <summary>Works out <see cref="M:OrthoGlobalXP.Regions.Continent.Of(OrthoGlobalXP.Geo.TileCoordinate)"/> from the region catalog's continents, once per tile.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Regions.ContinentMap.ByCatalogName">
+            <summary>Natural Earth's continents by name; Antarctica and the open seas are in none.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Regions.ContinentMap.UralsLongitude">
+            <summary>Natural Earth puts the whole of Russia in Europe; from this longitude on it is Asia, as OrthoStreamXP has it.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Regions.RegionKind.Region">
+            <summary>A group of states, such as a French region or England.</summary>
+        </member>
+        <member name="F:OrthoGlobalXP.Regions.RegionKind.State">
+            <summary>A state, province, county or the like: Natural Earth's first level inside a country.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.Region">
+            <summary>
+            A continent, subregion, country or state, with the 1° tiles it touches. <see cref="P:OrthoGlobalXP.Regions.Region.Parent"/> is the continent of a
+            subregion, the subregion of a country, and the country of a region or state.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Regions.Region.#ctor(OrthoGlobalXP.Regions.RegionKind,System.String,System.String,System.Collections.Generic.IReadOnlyList{OrthoGlobalXP.Geo.TileCoordinate})">
+            <summary>
+            A continent, subregion, country or state, with the 1° tiles it touches. <see cref="P:OrthoGlobalXP.Regions.Region.Parent"/> is the continent of a
+            subregion, the subregion of a country, and the country of a region or state.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Regions.RegionCatalog">
+            <summary>
+            The areas tiles can be picked by, made from Natural Earth's public-domain 1:10m outlines (<c>tools/make_regions.py</c>).
+            A tile belongs to an area when the area's outline passes through it or its centre lies inside it, so tiles on a border
+            belong to both sides. Sea tiles are listed too; pick only those X-Plane has.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Regions.RegionCatalog.All">
+            <summary>Every area: continents, subregions, countries, regions, then states, each by parent and name.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Regions.RegionCatalog.ParseTiles(System.String)">
+            <summary>Rows "lat:lon,lon-lon" joined by ';'.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.GlobalTileRetexturer">
+            <summary>
+            Re-textures one X-Plane Global Scenery tile with photo terrain:
+            <list type="number">
+            <item>the solid land patches are joined into one mesh and cut along the photo textures' edges;</item>
+            <item>each piece is given its texture (<c>terrain/ROW_COL_BI16.ter</c>) and texture coordinates;</item>
+            <item>the overlays blending one land class into the next are left out;</item>
+            <item>water and every raster stay as they are, byte for byte;</item>
+            <item>the roads, forests, buildings and other objects are left out (with their definitions and the 32-bit pools of the
+            roads' points): they go to the tile's overlay (<see cref="T:OrthoGlobalXP.Retexture.TileOverlay"/>), or come from another overlay package.</item>
+            </list>
+            Elevations X-Plane samples from the tile's raster stay sampled, so the relief is X-Plane's own.
+            With <paramref name="runways"/>, the textures near airports are of finer zooms (see <see cref="T:OrthoGlobalXP.Imagery.TextureLayout"/>).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.#ctor(OrthoGlobalXP.Imagery.TextureGrid,OrthoGlobalXP.Airports.RunwayZoom)">
+            <summary>
+            Re-textures one X-Plane Global Scenery tile with photo terrain:
+            <list type="number">
+            <item>the solid land patches are joined into one mesh and cut along the photo textures' edges;</item>
+            <item>each piece is given its texture (<c>terrain/ROW_COL_BI16.ter</c>) and texture coordinates;</item>
+            <item>the overlays blending one land class into the next are left out;</item>
+            <item>water and every raster stay as they are, byte for byte;</item>
+            <item>the roads, forests, buildings and other objects are left out (with their definitions and the 32-bit pools of the
+            roads' points): they go to the tile's overlay (<see cref="T:OrthoGlobalXP.Retexture.TileOverlay"/>), or come from another overlay package.</item>
+            </list>
+            Elevations X-Plane samples from the tile's raster stay sampled, so the relief is X-Plane's own.
+            With <paramref name="runways"/>, the textures near airports are of finer zooms (see <see cref="T:OrthoGlobalXP.Imagery.TextureLayout"/>).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.Layout(OrthoGlobalXP.Geo.TileCoordinate)">
+            <summary>The tile's textures: the grid's, finer near runways.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.TrianglesByTexture(OrthoGlobalXP.Mesh.TriangleMesh,OrthoGlobalXP.Imagery.TextureLayout)">
+            <summary>The triangles of each texture (by the texture under their centroid), coarsest zoom first, then north-west first.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.EmptyUnusedPools(OrthoGlobalXP.Retexture.SourcePools,System.Collections.Generic.List{OrthoGlobalXP.Dsf.TerrainPatch})">
+            <summary>Empties every pool but those of the water patches (the land and blends are replaced, the rest left out). Returns how many.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.ClearOverlays(OrthoGlobalXP.Dsf.DsfDocument)">
+            <summary>
+            Empties the object, polygon and network tables, so X-Plane loads none of the art the tile no longer places, and
+            removes the 32-bit pools: only network chains place points from them.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.GlobalTileRetexturer.CheckBounds(OrthoGlobalXP.Dsf.DsfDocument,OrthoGlobalXP.Geo.TileCoordinate)">
+            <summary>Refuses a DSF whose sim/west and sim/south properties name another tile.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.PhotoPool">
+            <summary>
+            One 7-plane pool of photo terrain (lon, lat, elevation, normal x, normal y, s, t) covering a 1/16° square. The square's
+            corner and size are exact binary fractions, so a point on its border decodes to the same position in the pools on both
+            sides and the textures meet without cracks.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.PhotoPool.#ctor(System.Double,System.Double,System.Double)">
+            <summary>
+            One 7-plane pool of photo terrain (lon, lat, elevation, normal x, normal y, s, t) covering a 1/16° square. The square's
+            corner and size are exact binary fractions, so a point on its border decodes to the same position in the pools on both
+            sides and the textures meet without cracks.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.PhotoPool.ElevationRange">
+            <summary>
+            The elevation plane's offset and scale: -32768 to 32767 in whole metres when a point samples the raster (so the marker
+            value is exact, as in X-Plane's own pools), otherwise the points' own range.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.PhotoPoolLayout">
+            <summary>
+            Places the photo terrain's points in pools: each mesh vertex goes to the pool of the 1/16° square it lies in, once per
+            texture that uses it (a vertex on a texture edge has other texture coordinates on each side). A square with more points
+            than one pool holds gets more pools with the same extent.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.PhotoPoolLayout.Point(System.Int32,System.Int32,OrthoGlobalXP.Mesh.MeshVertex,System.Double,System.Double)">
+            <summary>The point of <paramref name="vertexIndex"/> in texture <paramref name="texture"/>, added on first use.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.RetexturedTile">
+            <summary>The new DSF of a tile and the photo textures it names.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.RetexturedTile.#ctor(System.Byte[],System.Collections.Generic.IReadOnlyList{OrthoGlobalXP.Imagery.TextureCell},OrthoGlobalXP.Retexture.RetextureStats)">
+            <summary>The new DSF of a tile and the photo textures it names.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.RetextureStats">
+            <summary>What re-texturing one tile did, for the log.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.RetextureStats.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.Int32,System.Int32})">
+            <summary>What re-texturing one tile did, for the log.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.SourcePools">
+            <summary>The 16-bit pools of the source DSF (its POOL and SCAL atoms, in file order), decoded when first read.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.SourcePools.Vertex(OrthoGlobalXP.Dsf.PoolRef)">
+            <summary>A point as a mesh vertex (its first five planes: lon, lat, elevation, normal x, normal y).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.SourcePools.Empty(System.Int32)">
+            <summary>Replaces a pool nothing uses any more with a one-point stand-in, keeping the other pools' indices.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.TileOverlay">
+            <summary>
+            Turns one X-Plane Global Scenery tile into an overlay DSF (<c>sim/overlay 1</c>): its roads, railways, power lines,
+            forests, autogen and objects, without its terrain and rasters, for the overlay package beside the photo package.
+            <list type="bullet">
+            <item>every command but the terrain patches is copied byte for byte, pool and definition selections included;</item>
+            <item>the object, polygon and network tables and the 32-bit pools (the roads' points) stay as they are;</item>
+            <item>the 16-bit pools only the terrain used become one-point placeholders, so the others keep their indices;</item>
+            <item>the terrain and raster tables are emptied and the rasters left out.</item>
+            </list>
+            OrthoStreamXP reads the roads of an overlay package's plain DSFs to light the photo tiles at night, so the overlay is
+            never packed.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.TileOverlay.Extract(System.Byte[],OrthoGlobalXP.Geo.TileCoordinate)">
+            <summary>The overlay DSF of <paramref name="tile"/> from its Global Scenery DSF (unpacked).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.TileOverlay.OtherCommands(System.Byte[])">
+            <summary>Every command but the terrain patches, in order: pool and definition selections are kept, so the rest reads as before.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.TileOverlay.MarkAsOverlay(OrthoGlobalXP.Dsf.DsfDocument)">
+            <summary>Sets <c>sim/overlay 1</c> in the properties, after the tile's bounds.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Retexture.OverlayTile">
+            <summary>A tile's overlay DSF and how many network chains (roads among them) it draws.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Retexture.OverlayTile.#ctor(System.Byte[],System.Int32)">
+            <summary>A tile's overlay DSF and how many network chains (roads among them) it draws.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Scenery.DsfFiles">
+            <summary>
+            Reads and writes DSF files, plain or packed the way Laminar ships them: a 7z (LZMA) archive holding the one DSF.
+            X-Plane recognises the 7z signature when it loads a .dsf and unpacks it in memory.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.DsfFiles.WriteAsync(System.String,System.Byte[],System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Writes the DSF through a temporary file in the same folder, so X-Plane or a crash never sees half a file.
+            <paramref name="pack"/> stores it as a 7z archive, as Laminar's own.
+            </summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Scenery.GlobalScenery">
+            <summary>
+            The tiles of X-Plane 12's Global Scenery: one DSF per 1° tile under Earth nav data, in <c>X-Plane 12 Global Scenery</c> and in
+            <c>X-Plane 12 Demo Areas</c>. The installer keeps the demo areas' tiles only in the latter unless their region is downloaded
+            too; a tile in both is the same file and is read from <c>X-Plane 12 Global Scenery</c>.
+            </summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Scenery.GlobalScenery.EarthNavData">
+            <summary>Earth nav data of <c>X-Plane 12 Global Scenery</c>.</summary>
+        </member>
+        <member name="P:OrthoGlobalXP.Scenery.GlobalScenery.DemoAreasEarthNavData">
+            <summary>Earth nav data of <c>X-Plane 12 Demo Areas</c>.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.GlobalScenery.ExistsIn(System.String)">
+            <summary>Whether <paramref name="xplaneFolder"/> has Global Scenery or Demo Areas to build from.</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.GlobalScenery.PathOf(OrthoGlobalXP.Geo.TileCoordinate)">
+            <summary>
+            The tile's DSF: the Global Scenery one, else the Demo Areas one. When neither exists, the path it would have in Global
+            Scenery (so the file does not exist).
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.GlobalScenery.Tiles">
+            <summary>Every tile that has a DSF, each once.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Scenery.OrthoStreamXPSettings">
+            <summary>
+            The packages folder OrthoStreamXP mounts (<c>base-packages</c> in <c>%LOCALAPPDATA%\OrthoStreamXP\orthostreamxp.ini</c>):
+            a package made there is streamed with the others at OrthoStreamXP's next start.
+            </summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.OrthoStreamXPSettings.PackagesFolderIn(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>The value of the <c>base-packages = folder</c> line, when that folder exists.</summary>
+        </member>
+        <member name="T:OrthoGlobalXP.Scenery.XPlaneInstallation">
+            <summary>Finds X-Plane 12 from the install list its installer keeps (<c>%LOCALAPPDATA%\x-plane_install_12.txt</c>).</summary>
+        </member>
+        <member name="M:OrthoGlobalXP.Scenery.XPlaneInstallation.FindDefault">
+            <summary>The first listed X-Plane 12 folder that has Global Scenery (or only its Demo Areas), or null.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RangePattern_0">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the RangePattern method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.RangePattern_0.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RangePattern_0.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RangePattern_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_1">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the NamePattern method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.NamePattern_1.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_1.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_1.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CodePattern_2">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the CodePattern method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.CodePattern_2.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CodePattern_2.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CodePattern_2.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
+            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
+            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
+            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
+        </member>
+    </members>
+</doc>

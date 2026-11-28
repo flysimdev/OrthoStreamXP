@@ -23,6 +23,7 @@ OrthoStreamXP will always be free. If it has given you a flight worth rememberin
 Traditional photo scenery often requires downloading and building large areas before you can use them. OrthoStreamXP takes a different approach.
 
 - **Scenery on demand** — download imagery as X-Plane needs it, instead of preparing entire regions in advance.
+- **Scenery packages for anywhere** — pick the areas you fly on a map, and OrthoStreamXP builds their packages from X-Plane's own Global Scenery in seconds per tile, with no mesh to download.
 - **Less disk space wasted** — keep the areas you fly and automatically remove older scenery when your cache reaches its limit.
 - **Better scenery ahead** — OrthoStreamXP follows your aircraft and downloads upcoming areas before you reach them.
 - **Simple quality settings** — choose Balanced, Sharp, Ultra, or Extra without learning dozens of technical parameters.
@@ -33,7 +34,7 @@ Traditional photo scenery often requires downloading and building large areas be
 - **Towns lit at night** — optionally give the photo scenery street lamps and the light of the houses along X-Plane's roads, so towns glow after dark as on X-Plane's own scenery. You can also skip the detailed photos at night to save downloads, keeping the lights.
 - **Exposure and a live preview** — tone down photos that look too bright next to X-Plane's own scenery, and see any colour change on a photo from your cache before you fly.
 - **See what happened during your flight** — review download performance, scenery loading, and your flight route.
-- **Your scenery list, without Notepad** — switch X-Plane's scenery packages on or off and drag them into order on the X-Plane Custom Scenery page, and leave any of your photo scenery packages out of a flight with one switch on the Home page.
+- **Your scenery list, without Notepad** — switch X-Plane's scenery packages on or off and drag them into order on the X-Plane Custom Scenery page (with a search box for long lists), and leave any of your photo scenery packages out of a flight with one switch on the Home page.
 - **Level airports** — an airport that sits on a bump or in a hollow of the photo scenery's ground can be flattened on the Airports page, one at a time, without changing the airport's own files. Undo puts it back.
 
 ### Designed for everyday flying
@@ -53,17 +54,18 @@ Before installing OrthoStreamXP, make sure you have:
 - **Windows 10 or 11 (64-bit)**
 - **X-Plane 12**
 - **WinFsp**, a free Windows component used to make the streamed scenery available to X-Plane. The setup process checks for it and provides a download link.
-- **Scenery packages** for the regions you want to fly over: a region's mesh downloaded from within OrthoStreamXP, or your own.
+- **Scenery packages** for the regions you want to fly over: built in OrthoStreamXP from X-Plane's own Global Scenery, a region's mesh downloaded from within OrthoStreamXP, or your own.
 - **An internet connection** for downloading new scenery.
 - **Disk space for the scenery cache** — 25 GB is a reasonable starting point; more space lets you keep more areas available.
 - A graphics card with enough memory for your chosen quality preset.
 
 The installer also installs the .NET 10 desktop runtime if it is missing.
 
-**Important:** OrthoStreamXP streams imagery onto scenery packages; it does not create terrain meshes itself. There are two ways to get them:
+**Important:** OrthoStreamXP streams imagery onto scenery packages. There are three ways to get them:
 
-1. **Download a region from within OrthoStreamXP:** a whole region's mesh (Europe, North America, ...), during setup or later from the **Packages** page. The few tiles AutoOrtho's collection lacks (around Portland, Oregon, and in Tonga) are added to their region from [OrthoStreamXP's own collection](https://github.com/flysimdev/orthostreamxp-scenery).
-2. **Use your own packages:** compatible packages can come from tools such as Ortho4XP, OrthoStudio XP, AutoOrtho, and XPME. You can select an existing package folder during setup.
+1. **Build your own from X-Plane's Global Scenery:** pick the areas you fly on a map, during setup or later on the **Packages** page, and OrthoStreamXP makes their packages on your PC in a few seconds per tile, keeping X-Plane's relief, water, roads, forests and buildings. Nothing to download but the photos.
+2. **Download a region from within OrthoStreamXP:** a whole region's mesh (Europe, North America, ...) from the **Packages** page. The few tiles AutoOrtho's collection lacks (around Portland, Oregon, and in Tonga) are added to their region from [OrthoStreamXP's own collection](https://github.com/flysimdev/orthostreamxp-scenery).
+3. **Use your own packages:** compatible packages can come from tools such as Ortho4XP, OrthoStudio XP, AutoOrtho, and XPME. You can select an existing package folder during setup.
 
 ## Installation
 
@@ -128,7 +130,7 @@ Choose **Satellite** as the season to colour the grass and fields by NASA's sate
 OrthoStreamXP is currently in beta. Please keep the following in mind:
 
 - **Windows only:** the application depends on WinFsp.
-- **Scenery packages are required:** download a region's mesh (6 to 33 GB per region) from the Packages page, or bring your own.
+- **Scenery packages are required:** build them from X-Plane's Global Scenery on the Packages page, download a region's mesh (6 to 33 GB per region) there, or bring your own.
 - **Internet required for new areas:** scenery loads from the internet on first use; subsequent flights can reuse cached imagery.
 - **Imagery varies by location:** quality, capture date, colours, and transitions between imagery sources may differ.
 - **Performance depends on your setup:** connection speed, disk performance, and graphics memory affect the experience.
