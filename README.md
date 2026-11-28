@@ -34,7 +34,7 @@ Traditional photo scenery often requires downloading and building large areas be
 - **Towns lit at night** — optionally give the photo scenery street lamps and the light of the houses along X-Plane's roads, so towns glow after dark as on X-Plane's own scenery. You can also skip the detailed photos at night to save downloads, keeping the lights.
 - **Exposure and a live preview** — tone down photos that look too bright next to X-Plane's own scenery, and see any colour change on a photo from your cache before you fly.
 - **See what happened during your flight** — review download performance, scenery loading, and your flight route.
-- **Your scenery list, without Notepad** — switch X-Plane's scenery packages on or off and drag them into order on the X-Plane Custom Scenery page, and leave any of your photo scenery packages out of a flight with one switch on the Home page.
+- **Your scenery list, without Notepad** — switch X-Plane's scenery packages on or off and drag them into order on the X-Plane Custom Scenery page (with a search box for long lists), and leave any of your photo scenery packages out of a flight with one switch on the Home page.
 - **Level airports** — an airport that sits on a bump or in a hollow of the photo scenery's ground can be flattened on the Airports page, one at a time, without changing the airport's own files. Undo puts it back.
 
 ### Designed for everyday flying
